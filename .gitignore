@@ -1,0 +1,37 @@
+/Original/build
+/PureC/build
+/Simplify/Keil Demo工程/STM32F429_ENC_时间测试/Output
+/Simplify/NR/Debug
+/Simplify/NR/NR/Debug
+/Simplify/NR/.vs
+/Simplify/Keil Demo工程/ENC方案2_硬件FFT延迟10ms/Output
+/Simplify/Keil Demo工程/ENC方案1_软件FFT延迟12ms/Output
+/NoisyReduce_backup/build
+enc(3).zip
+/Project/build
+/Project/ENC_Core/build
+/ENC_NotGoodEnough/ENC_Core/build
+/enc_48K/enc_48K/NR/Source/.vscode
+/enc_48K/enc_48K/NR/NR/Debug
+/enc_48K/enc_48K/NR/Debug
+/enc_48K/enc_48K/NR/.vs
+/enc_48K/enc_48K/Keil Demo工程
+/enc_48K/enc_48K/ENC 算法分析
+*.rar
+*.zip
+*.ipch
+/Simplify/NR_32k/Debug
+/Simplify/NR_32k/NR/Debug
+/Simplify/NR_48k/.vs
+/Simplify/NR_48k/NR/Debug
+/Simplify/enc_3filterbank_48K/NR/.vs
+*.obj
+*.tlog
+*.log
+/Simplify/enc_3filterbank_48K/NR/Debug
+*.pdb
+*.idb
+/Simplify/enc_3filterbank_48K/NR/NR/Debug
+*.filters
+/Simplify/enc_3filterbank_48K/NR/NR/Debug
+*.pdb

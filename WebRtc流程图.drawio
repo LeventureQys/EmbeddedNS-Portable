@@ -1,0 +1,67 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 Edg/132.0.0.0" version="26.0.11">
+  <diagram name="第 1 页" id="ZXdwHdAzq4VlgUES2S4n">
+    <mxGraphModel dx="815" dy="427" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="mUjrbQOLJ8-B_TZ9CTXL-1" value="对音频进行16K的分频，共三个band" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="305" y="60" width="144" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="mUjrbQOLJ8-B_TZ9CTXL-2" value="获取0-16kBand的数据" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="317" y="150" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="mUjrbQOLJ8-B_TZ9CTXL-3" value="" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="mUjrbQOLJ8-B_TZ9CTXL-1" target="mUjrbQOLJ8-B_TZ9CTXL-2">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="377" y="110" as="sourcePoint" />
+            <mxPoint x="550" y="110" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="mUjrbQOLJ8-B_TZ9CTXL-4" value="Analyse单个band数据" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="317" y="250" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="mUjrbQOLJ8-B_TZ9CTXL-5" value="" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="mUjrbQOLJ8-B_TZ9CTXL-2" target="mUjrbQOLJ8-B_TZ9CTXL-4">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="480" y="290" as="sourcePoint" />
+            <mxPoint x="530" y="240" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="mUjrbQOLJ8-B_TZ9CTXL-6" value="Process单个band的数据" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="317" y="350" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="mUjrbQOLJ8-B_TZ9CTXL-7" value="" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="mUjrbQOLJ8-B_TZ9CTXL-4" target="mUjrbQOLJ8-B_TZ9CTXL-6">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="470" y="370" as="sourcePoint" />
+            <mxPoint x="520" y="320" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="mUjrbQOLJ8-B_TZ9CTXL-8" value="此处做了float数组的拷贝，并且维护了一套NoiseSuppresor结构体内的数组" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="510" y="240" width="170" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="mUjrbQOLJ8-B_TZ9CTXL-9" value="" style="endArrow=classic;html=1;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="mUjrbQOLJ8-B_TZ9CTXL-8" target="mUjrbQOLJ8-B_TZ9CTXL-4">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="520" y="370" as="sourcePoint" />
+            <mxPoint x="570" y="320" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="mUjrbQOLJ8-B_TZ9CTXL-11" value="输入第一个band的数据，然后输出处理后的band，以及一个scale缩放比例" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="317" y="440" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="mUjrbQOLJ8-B_TZ9CTXL-12" value="" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="mUjrbQOLJ8-B_TZ9CTXL-6" target="mUjrbQOLJ8-B_TZ9CTXL-11">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="480" y="470" as="sourcePoint" />
+            <mxPoint x="530" y="420" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="mUjrbQOLJ8-B_TZ9CTXL-13" value="使用这个scale处理另外两个band" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="317" y="525" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="mUjrbQOLJ8-B_TZ9CTXL-14" value="" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="mUjrbQOLJ8-B_TZ9CTXL-11" target="mUjrbQOLJ8-B_TZ9CTXL-13">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="470" y="590" as="sourcePoint" />
+            <mxPoint x="520" y="540" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
