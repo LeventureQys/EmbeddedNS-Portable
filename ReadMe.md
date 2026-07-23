@@ -1,39 +1,62 @@
-Project Security Level:TopSecurity
+# ENC_Webrtc — WebRTC 降噪算法 C 语言移植
 
-项目涉密等级:绝密
+从 WebRTC AudioProcessing 模块中提取 NoiseSuppressor，由 C++ 移植为纯 C，适用于嵌入式 MCU 及各类平台。
 
-# ENC_Webrtc 来自WebRtc的降噪项目
+## 目录结构
 
-制作此代码，是用于后续在单片机以及在别的设备上进行移植所使用，所以这里需要将整个代码从C++移植到纯C类型
+| 目录 | 作者 | 说明 |
+| :--- | :--- | :--- |
+| `Project/` | Venture, Wendy | **主工程**：C 核心库 (`ENC_Core.dll`) + C++ 演示程序 (`ENC_Demo.exe`) |
+| `PureC/` | Wendy | 独立 C 库构建（与 `Project/` 同步，无演示程序） |
+| `Original/` | Venture | C++ 原始参考实现（不直接交付） |
+| `SpilitFilter/` | Wendy | 新三分频滤波器 C 实现（WIP） |
+| `Webrtc_Source/` | Venture | webrtc-audio-processing-1.0 完整源码（Meson 构建，仅作参考） |
+| `Document/` | — | 降噪算法教学文档与流程图 |
 
-## 文件夹及说明文件
+## 效果展示
 
-| 文件夹名称   | 更新时间   | 作者    | 说明 |
-| :-------------: | :-----------: | ------------: |------------:|
-| ENC_NotGoodEnough | 2025.2.2|Venture|一个另外的Noise Suppresor 实现方式，其中三分频的实现有所变化|
-|   Original   | 2025.2.2      | Venture     | C++ noise suppresor 满血版本|
-|  PureC   | 2025.2.2      | Wendy     | 修改后的满血C语言版本 |
-|   Simplify   | 2025.2.2      | Wendy     | 阉割版的Noise Suppresor|
-| Webrtc_Source | 2025.2.18 | Venture | 一个webrtc的完整版源码 |
-| SplitFilter | 2025.2.20 | Wendy | 迁移C语言的新分频器实现 |
+| 未降噪 | 降噪后 |
+| :---: | :---: |
+| ![](https://raw.githubusercontent.com/LeventureQys/Picturebed/main/image/企业微信截图_17400148087576.png) | ![](https://raw.githubusercontent.com/LeventureQys/Picturebed/main/image/20250220163058.png) |
 
+## 编译
 
-## 项目说明
+依赖：CMake 3.10+，Visual Studio 2022 (MSVC 17)。
 
-本项目为WebRtc下属的NoiseSuppressor 项目单独拆解，我们尝试将这个项目进行各种类型的移植和阉割，以满足我们对降噪算法的要求。
+```pwsh
+# 主工程（演示程序 + 动态库）
+cd Project
+mkdir build; cd build
+cmake .. -G "Visual Studio 17 2022"
+cmake --build . --config Release
+# 输出: build/bin/Release/ENC_Demo.exe, ENC_Core.dll
 
-降噪效果展示：
+# 纯 C 库（独立构建）
+cd PureC
+mkdir build; cd build
+cmake .. -G "Visual Studio 17 2022"
+cmake --build . --config Release
+```
 
-未降噪：
+零外部依赖，Demo 需要 C++17 编译器。
 
-![企业微信截图_17400148087576](https://raw.githubusercontent.com/LeventureQys/Picturebed/main/image/企业微信截图_17400148087576.png)
+## 快速使用
 
-降噪后：
-![20250220163058](https://raw.githubusercontent.com/LeventureQys/Picturebed/main/image/20250220163058.png)
+```c
+#include "ENC_V.h"
 
-其效果可以说相当显著，目前已经完成了C语言端的移植。
+void* handler = InitNSHandler(3);                  // 降噪级别 0–3（0=关闭，3=最强）
+float input[480], output[480];                     // 480 采样 = 10ms @ 48kHz
+NS_Process_48kAudio(handler, input, output);       // 逐帧处理
+FreeNSHandler(handler);
+```
 
+**关键约定**：音频采样为 `floatS16` 格式，即 `float` 值域 `[-32768.0, 32767.0]`，**非** `[-1, 1]` 归一化。
 
-## 编译说明
+## 技术参数
 
-需要编译Project下的项目，使用CMake直接编译即可，不需要任何依赖。其中ENC_Core为NoiseSuppressor库
+- 采样率：48 kHz
+- 帧长：480 samples（10 ms）
+- 声道：单声道
+- FFT：256 点 → 129 个频点
+- 降噪流程：三分频 → 分析（噪声估计 + 语音概率）→ Wiener 滤波 → 合成
