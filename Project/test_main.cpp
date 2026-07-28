@@ -9,6 +9,9 @@
 #include <chrono>
 #include <cmath>
 #include <numeric>
+#include <windows.h>
+#include <psapi.h>
+#pragma comment(lib, "psapi.lib")
 
 namespace fs = std::filesystem;
 
@@ -36,8 +39,25 @@ struct TestResult {
     double output_rms;
     double energy_reduction_db;
     size_t total_frames;
+    size_t peak_memory_kb;
     bool success;
 };
+
+static size_t GetPeakMemoryKB() {
+    PROCESS_MEMORY_COUNTERS pmc;
+    if (GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc))) {
+        return pmc.PeakWorkingSetSize / 1024;
+    }
+    return 0;
+}
+
+static size_t GetCurrentMemoryKB() {
+    PROCESS_MEMORY_COUNTERS pmc;
+    if (GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc))) {
+        return pmc.WorkingSetSize / 1024;
+    }
+    return 0;
+}
 
 static inline int16_t FloatS16ToS16(float v) {
     v = (std::min)(v, 32767.f);
@@ -101,6 +121,8 @@ TestResult process_audio_file(const std::string& input_filename, const std::stri
     size_t total_processed = 0;
     size_t frame_count = 0;
 
+    result.peak_memory_kb = 0;
+
     auto start_time = std::chrono::high_resolution_clock::now();
 
     while (total_processed < num_samples) {
@@ -155,6 +177,7 @@ TestResult process_audio_file(const std::string& input_filename, const std::stri
     result.success = true;
     result.total_frames = frame_count;
     result.process_time_ms = elapsed_ms;
+    result.peak_memory_kb = GetPeakMemoryKB();
     result.input_rms = std::sqrt(sum_input_sq / total_processed);
     result.output_rms = std::sqrt(sum_output_sq / total_processed);
 
@@ -179,6 +202,7 @@ int main() {
     std::cout << "  Input:  " << input_folder << std::endl;
     std::cout << "  Output: " << output_folder << std::endl;
     std::cout << "========================================" << std::endl;
+    std::cout << "\n[Memory] Process memory before test: " << GetCurrentMemoryKB() << " KB" << std::endl;
 
     if (!fs::exists(output_folder)) {
         fs::create_directories(output_folder);
@@ -202,6 +226,7 @@ int main() {
                 std::cout << "    Input RMS: " << r.input_rms << " | Output RMS: " << r.output_rms << std::endl;
                 std::cout << "    Energy Reduction: " << r.energy_reduction_db << " dB" << std::endl;
                 std::cout << "    RTF: " << (r.process_time_ms / (r.duration_sec * 1000.0)) << std::endl;
+                std::cout << "    Peak Memory: " << r.peak_memory_kb << " KB" << std::endl;
                 results.push_back(r);
             }
         }
@@ -226,6 +251,8 @@ int main() {
         std::cout << "Total process time:   " << total_process_time << " ms" << std::endl;
         std::cout << "Overall RTF:          " << overall_rtf << std::endl;
         std::cout << "Avg energy reduction: " << avg_reduction << " dB" << std::endl;
+        std::cout << "Peak process memory:  " << GetPeakMemoryKB() << " KB" << std::endl;
+        std::cout << "Current memory:       " << GetCurrentMemoryKB() << " KB" << std::endl;
     }
 
     std::cout << "\n[DONE] Output files saved to: " << output_folder << std::endl;

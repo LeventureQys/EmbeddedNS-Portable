@@ -10,14 +10,17 @@ add_subdirectory(ENC_Core)
 # 添加可执行文件
 add_executable(ENC_Demo main.cpp)
 add_executable(ENC_Test test_main.cpp)
+add_executable(ENC_MemProfile ENC_Core/mem_profile.c)
 
 # 链接 ENC_Core 库
 target_link_libraries(ENC_Demo PRIVATE ENC_Core)
 target_link_libraries(ENC_Test PRIVATE ENC_Core)
+target_link_libraries(ENC_MemProfile PRIVATE ENC_Core)
 
 # 包含 ENC_Core 的头文件
 target_include_directories(ENC_Demo PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/ENC_Core/AudioProcess)
 target_include_directories(ENC_Test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/ENC_Core/AudioProcess)
+target_include_directories(ENC_MemProfile PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/ENC_Core)
 
 # 根据构建类型设置输出目录
 if(CMAKE_CONFIGURATION_TYPES)  # 多配置生成器(如Visual Studio)
