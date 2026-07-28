@@ -189,7 +189,7 @@ void NoiseSuppressor_init(NoiseSuppressor* var, int suppression_level) {
     WienerFilter_init(&var->channels_0.wiener_filter);
     NoiseEstimator_init(&var->channels_0.noise_estimator);
     SpeechProbabilityEstimator_init(&var->channels_0.speech_probability_estimator);
-    ThreeBandFilterBank_init(&var->splitting_filter);     //Ä¬ÈÏ3bands
+    ThreeBandFilterBank_init(&var->splitting_filter);     //Ä¬ï¿½ï¿½3bands
     var->num_analyzed_frames_ = -1;
     var->capture_output_used_ = true;
 
@@ -215,8 +215,6 @@ void NoiseSuppressor_init(NoiseSuppressor* var, int suppression_level) {
 
 
 
-    memset(var->upper_band_gains_heap_, 0, sizeof(float) * (num_channels_));
-    memset(var->upper_band_gains_heap_, 0, sizeof(float) * (num_channels_));
     memset(var->upper_band_gains_heap_, 0, sizeof(float) * (num_channels_));
 }
 
@@ -284,7 +282,7 @@ void NoiseSuppressor_Analyze(NoiseSuppressor* var, FrameBuffer* audio) {
         // Compute energies.
         float signal_energy = 0.f;
         float signal_spectral_sum = 0.f;
-        float* fft_ptr = fft_out;   //²»ÐèÒªÊÍ·ÅÕâ¸öÖ¸Õë£¬²¢Î´·ÖÅäÄÚ´æ
+        float* fft_ptr = fft_out;   //ï¿½ï¿½ï¿½ï¿½Òªï¿½Í·ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ë£¬ï¿½ï¿½Î´ï¿½ï¿½ï¿½ï¿½ï¿½Ú´ï¿½
         for (int i = 0; i < kFftSizeBy2Plus1; ++i) {
             signal_energy += fft_ptr[0] * fft_ptr[0] + fft_ptr[1] * fft_ptr[1];
             fft_ptr += 2;
@@ -317,7 +315,7 @@ void NoiseSuppressor_Analyze(NoiseSuppressor* var, FrameBuffer* audio) {
         memcpy(ch_p->prev_analysis_signal_spectrum, signal_spectrum, sizeof(float) * (kFftSizeBy2Plus1));
     }
 }
-//ÐèÒª×¢ÒâµÄÊÇ£¬ÕâÀïµÄfft_outÊÇÒ»ÐÐrealÒ»ÐÐimg£¬ÐèÒª×¢Òâ
+//ï¿½ï¿½Òª×¢ï¿½ï¿½ï¿½ï¿½Ç£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½fft_outï¿½ï¿½Ò»ï¿½ï¿½realÒ»ï¿½ï¿½imgï¿½ï¿½ï¿½ï¿½Òª×¢ï¿½ï¿½
 //
 void Process_ExternedFrame_withFFTOut(float* time_data,float* fft_out) {
   
@@ -362,7 +360,7 @@ void NoiseSuppressor_Process(NoiseSuppressor* var, FrameBuffer* audio) {
 
     // Only do the below processing if the output of the audio processing module is used.
     if (!var->capture_output_used_) {
-        return -1.0;
+        return;
     }
 
     // Aggregate the Wiener filters for all channels.
@@ -383,7 +381,7 @@ void NoiseSuppressor_Process(NoiseSuppressor* var, FrameBuffer* audio) {
     float kScaling = 2.f / kFftSize;
     for (int ch = 0; ch < num_channels_; ++ch) {
         IFFT_table(fft_out, filter_bank_states.extended_frame);
-        ////ÕâÀï¶ÔÊä³öµÄextended_frame»¹×öÁË¸öscaling
+        ////ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½extended_frameï¿½ï¿½ï¿½ï¿½ï¿½Ë¸ï¿½scaling
         //for (int i = 0;i < 256;++i) {
         //    filter_bank_states.extended_frame[i] = filter_bank_states.extended_frame[i] * kScaling;
         //}
@@ -417,30 +415,31 @@ void NoiseSuppressor_Process(NoiseSuppressor* var, FrameBuffer* audio) {
         OverlapAndAdd(filter_bank_states.extended_frame, var->channels_0.process_synthesis_memory, y_band0);
     }
     
-    float y_band[kNsFrameSize];
     if (num_bands_ > 1) {
         // Select the noise attenuating gain to apply to the upper band.
-        float upper_band_gain = var->upper_band_gains_heap_[0];
+        float upper_band_gain = upper_band_gains[0];
         for (int ch = 1; ch < num_channels_; ++ch) {
-            upper_band_gain = min_local(upper_band_gain, var->upper_band_gains_heap_[ch]);
+            upper_band_gain = min_local(upper_band_gain, upper_band_gains[ch]);
         }
 
         // Process the upper bands.
+        float y_band[kNsFrameSize];
         for (int ch = 0; ch < num_channels_; ++ch) {
             for (int b = 1; b < num_bands_; ++b) {
-            // Delay the upper bands to match the delay of the filterbank applied to the lowest band.
-            float delayed_frame[kNsFrameSize];
-            memcpy(y_band, audio->split_data_[b], sizeof(float) * (kNsFrameSize));
+                // Delay the upper bands to match the delay of the filterbank applied to the lowest band.
+                float delayed_frame[kNsFrameSize];
+                memcpy(y_band, audio->split_data_[b], sizeof(float) * (kNsFrameSize));
 
-            DelaySignal(y_band, var->channels_0.process_delay_memory[b - 1], delayed_frame);
-            // Apply the time-domain noise-attenuating gain.
-            for (int j = 0; j < kNsFrameSize; j++) {
-                y_band[j] = upper_band_gain * delayed_frame[j];
-            }
+                DelaySignal(y_band, var->channels_0.process_delay_memory[b - 1], delayed_frame);
+                // Apply the time-domain noise-attenuating gain.
+                for (int j = 0; j < kNsFrameSize; j++) {
+                    y_band[j] = upper_band_gain * delayed_frame[j];
+                }
+                // Write back the processed upper band to audio buffer.
+                memcpy(audio->split_data_[b], y_band, sizeof(float) * (kNsFrameSize));
             }
         }
-        return upper_band_gain;
-    } 
+    }
 
     // Limit the output the allowed range.
     for (int ch = 0; ch < num_channels_; ++ch) {
@@ -452,7 +451,6 @@ void NoiseSuppressor_Process(NoiseSuppressor* var, FrameBuffer* audio) {
             }
         }
     }
-    return 0.0;
 }
 
 

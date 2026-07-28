@@ -76,9 +76,8 @@ float ComputeOverallScalingFactor(SuppressionParams* suppression_params_, int32_
         // Do not reduce scale too much for pause regions: attenuation here should be controlled by flooring.
         gain = max_local(gain, suppression_params_->minimum_attenuating_gain);
         scale_factor2 = 1.f - 0.3f * (kBLim - gain);
-
-        // Combine both scales with speech/noise prob: note prior (prior_speech_probability) is not frequency dependent.
-        return prior_speech_probability * scale_factor1 + (1.f - prior_speech_probability) * scale_factor2;
     }
-    return -1;
+
+    // Combine both scales with speech/noise prob: note prior (prior_speech_probability) is not frequency dependent.
+    return prior_speech_probability * scale_factor1 + (1.f - prior_speech_probability) * scale_factor2;
 }
