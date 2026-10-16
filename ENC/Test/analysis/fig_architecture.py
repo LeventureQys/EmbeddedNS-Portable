@@ -22,9 +22,9 @@ from fig_style import C
 ROOT = "D:/workshop/Github/EmbeddedNS-Portable"
 
 
-def _node(cv, x, y, w, h, tag, title, lines, color, tag_fnt=S.FS_LABEL):
+def _node(cv, x, y, w, h, tag, title, lines, color, tag_fnt=S.FS_MIN):
     S.node_box(cv, x, y, w, h, title, lines, tag=tag, fill=color,
-               fnt_title=S.FS_AXIS, fnt_body=S.FS_LABEL, tag_fnt=tag_fnt)
+               fnt_title=S.FS_MIN, fnt_body=S.FS_MIN, tag_fnt=tag_fnt)
 
 
 def fig_t02() -> str:
@@ -32,112 +32,106 @@ def fig_t02() -> str:
     d = cv.d
     left = cv.pad_l
     right = cv.W - cv.pad_r
-    top = cv.top0 + 6
-    bottom = cv.H - cv.bottom0 - 30
+    cv.set_bottom_reserve(56)
 
-    # ---------------------------------------------------------------- 三层主体
-    lane_gap = 62
-    lane_h = (bottom - top - lane_gap * 2) / 3.0
+    # 垂直预算（根因 A）：旧版按 `lane_h = (bottom-top-2*gap)/3` 手算行高，没把
+    # 「层标题 + 卡片内 tag/标题行」算进去，卡片正文只剩 1 行可用，于是路径被
+    # `_clip_lines` 砍成 `Test_Audio/AudioSa…`。现在用 `stack_rows` 把层标题
+    # 计入预算，卡片高度按「tag 行 36 + 标题行 30 + 3 行正文 ×30」= 156 px 反推，
+    # 并用 24 px 字号保证每条路径都能整行落地、不折行、不截断。
     card_w = 330
-    card_gap = 34
+    card_gap = 30
     cols_x = [left, left + card_w + card_gap, left + 2 * (card_w + card_gap)]
+    # 实测（full 版位 top0=100）：`stack_rows(3, top=106, bottom=749, gap=8, caption_h=30)`
+    # 每层 179 px，扣掉「tag 行 36 + 标题行 30 + 上下留白 12」后正文可用 95 px → 3 行。
+    lanes = cv.stack_rows(3, top=cv.top0 + 6, bottom=cv.H - cv.bottom0 - 40,
+                          gap=8, caption_h=30)
+    lane_caps = ("① 输入与构建（Phase 0 / P0）",
+                 "② 测试驱动与测量（T1 / T2 / T3）",
+                 "③ 被测组件（WebRTC NS 移植）")
 
     # --- 层 1：输入与构建 ---
-    y = top
-    S.caption(cv, left, y - 6, "① 输入与构建（Phase 0 / P0）", color=C.PRIMARY, fnt=S.FS_AXIS)
-    y0 = y + 30
-    _node(cv, cols_x[0], y0, card_w, lane_h - 30, "P0-1", "测试音频样本",
-          ["Test_Audio/AudioSample-48000hz/",
-           "1.wav … 9.wav",
+    rect, cap_y = lanes[0]
+    y0, lane_h = rect[1], rect[3] - rect[1]
+    S.caption(cv, left, cap_y, lane_caps[0], color=C.PRIMARY, fnt=S.FS_MIN)
+    _node(cv, cols_x[0], y0, card_w, lane_h, "P0-1", "测试音频样本",
+          ["Test_Audio/1.wav–9.wav",
            "2ch / 16bit / 48000Hz",
            "合计 190.42 s"], C.TEXT)
-    _node(cv, cols_x[1], y0, card_w, lane_h - 30, "P0-2", "核心库构建产物",
-          ["Project/ENC_Core/AudioProcess/",
-           "  Api/ENC_V.h  ← 公共 API",
-           "  ns_core.* / ns_common.h",
-           "输出 ENC_Core.dll（Release）"], C.PRIMARY)
-    _node(cv, cols_x[2], y0, card_w, lane_h - 30, "P0-3", "构建指纹",
-          ["ENC/Test/data/<variant>/",
-           "  build_info.txt",
-           "variant / patch_flags",
-           "sample_depth / c_flags / git_commit"], C.POSITIVE)
+    _node(cv, cols_x[1], y0, card_w, lane_h, "P0-2", "核心库构建产物",
+          ["Project/ENC_Core/",
+           "Api/ENC_V.h ← 公共 API",
+           "→ 输出 ENC_Core.dll"], C.PRIMARY)
+    _node(cv, cols_x[2], y0, card_w, lane_h, "P0-3", "构建指纹",
+          ["ENC/Test/data/",
+           "build_info.txt（构建指纹）",
+           "variant / patch_flags"], C.POSITIVE)
 
     # --- 层 2：测试驱动 ---
-    y = y0 + lane_h - 30 + lane_gap
-    S.caption(cv, left, y - 6, "② 测试驱动与测量（T1 / T2 / T3）", color=C.PRIMARY, fnt=S.FS_AXIS)
-    y1 = y + 30
-    _node(cv, cols_x[0], y1, card_w, lane_h - 30, "T1", "驱动与分帧",
+    rect, cap_y = lanes[1]
+    y1, lane_h = rect[1], rect[3] - rect[1]
+    S.caption(cv, left, cap_y, lane_caps[1], color=C.PRIMARY, fnt=S.FS_MIN)
+    _node(cv, cols_x[0], y1, card_w, lane_h, "T1", "驱动与分帧",
           ["ENC/Test/harness/",
-           "固定 480 样本/帧（10 ms）",
-           "floatS16 量纲 ±32768",
-           "末帧补零后裁剪回原长"], C.PRIMARY)
-    _node(cv, cols_x[1], y1, card_w, lane_h - 30, "T2", "逐帧指标记录",
+           "480 样本/帧（10 ms）",
+           "floatS16 量纲 ±32768"], C.PRIMARY)
+    _node(cv, cols_x[1], y1, card_w, lane_h, "T2", "逐帧指标记录",
           ["metrics_<name>.csv",
-           "12 列，顺序固定（计划书 6.2）",
-           "atten_db = 20log10(in/out)",
-           "out_rms=0 → 999.0 哨兵"], C.PRIMARY)
-    _node(cv, cols_x[2], y1, card_w, lane_h - 30, "T3", "汇总与矩阵",
-          ["summary_<variant>_<level>.csv",
+           "12 列顺序固定",
+           "atten_db=20log10(in/out)"], C.PRIMARY)
+    _node(cv, cols_x[2], y1, card_w, lane_h, "T3", "汇总与矩阵",
+          ["summary_<var>_<lvl>.csv",
            "9 文件 × 3 等级 × 4 变体",
-           "变体: baseline/d1/d1d5/optimized",
-           "等级: L0 / L1 / L3"], C.PRIMARY)
+           "变体 baseline/d1/d1d5"], C.PRIMARY)
 
     # --- 层 3：被测组件 ---
-    y = y1 + lane_h - 30 + lane_gap
-    S.caption(cv, left, y - 6, "③ 被测组件（WebRTC NS 移植）", color=C.PRIMARY, fnt=S.FS_AXIS)
-    y2 = y + 30
-    _node(cv, cols_x[0], y2, card_w, lane_h - 30, "C1", "NS 主处理",
-          ["NS_Process_48kAudio(handler,",
-           "                    in, out)",
-           "InitNSHandler(level 0–3)",
-           "SuppressionParams 按等级装载"], C.OPTIMIZED)
-    _node(cv, cols_x[1], y2, card_w, lane_h - 30, "C2", "诊断量采集",
-          ["NsDiagnostics",
-           "signal_energy / signal_spectral_sum",
-           "diff_normalization / speech_prob_mean",
-           "prior_speech_prob / gain_adjustment"], C.WARN)
-    _node(cv, cols_x[2], y2, card_w, lane_h - 30, "C3", "缺陷补丁开关",
-          ["patch_flags  bit0=D1  bit1=D5",
-           "            bit2=D6",
-           "同一源码树，仅开关不同",
-           "以旁证消融链定位 D1 污染"], C.WARN)
+    rect, cap_y = lanes[2]
+    y2, lane_h = rect[1], rect[3] - rect[1]
+    S.caption(cv, left, cap_y, lane_caps[2], color=C.PRIMARY, fnt=S.FS_MIN)
+    _node(cv, cols_x[0], y2, card_w, lane_h, "C1", "NS 主处理",
+          ["NS_Process_48kAudio()",
+           "InitNSHandler(0–3)",
+           "SuppressionParams 装载"], C.OPTIMIZED)
+    _node(cv, cols_x[1], y2, card_w, lane_h, "C2", "诊断量采集",
+          ["NsDiagnostics 诊断量",
+           "signal_energy / diff_norm",
+           "speech_prob / gain_adjust"], C.WARN)
+    _node(cv, cols_x[2], y2, card_w, lane_h, "C3", "缺陷补丁开关",
+          ["patch_flags：bit0=D1",
+           "bit1=D5  bit2=D6",
+           "同一源码树，仅开关不同"], C.WARN)
 
     # ---------------------------------------------------------------- 数据流箭头
     arrow_x = cols_x[2] + card_w + 44
-    for ya, yb, lab in ((y0 + 20, y1 + 20, "输入 WAV"),
-                        (y1 + 20, y2 + 20, "帧缓冲"),
-                        (y2 + 20, y2 + (lane_h - 30) + 16, "输出 WAV + CSV")):
+    for ya, yb in ((y0 + 24, y1 - 20), (y1 + 24, y2 - 20)):
         S.arrow(d, [(arrow_x, ya), (arrow_x, yb)], color=C.PRIMARY, lw=3)
-    # 主链路：组件层 → 产物层（横向）
-    S.arrow(d, [(cols_x[0] + card_w / 2, y2 + lane_h - 30), (cols_x[0] + card_w / 2, bottom + 6)],
-            color=C.OPTIMIZED, lw=3)
-    S.arrow(d, [(cols_x[1] + card_w / 2, y2 + lane_h - 30),
-                (cols_x[1] + card_w / 2, bottom + 6)], color=C.PRIMARY, lw=3)
-    S.arrow(d, [(cols_x[2] + card_w / 2, y2 + lane_h - 30),
-                (cols_x[2] + card_w / 2, bottom + 6)], color=C.WARN, lw=3)
+    # 组件层 → 产物层（三条竖箭头，起点在卡片下沿之内、终点止于层标题之上）
+    arrow_end = lanes[2][0][3] + 26
+    for i, colr in enumerate((C.OPTIMIZED, C.PRIMARY, C.WARN)):
+        S.arrow(d, [(cols_x[i] + card_w / 2, y2 + lane_h), (cols_x[i] + card_w / 2, arrow_end)],
+                color=colr, lw=3)
 
     # 右侧纵向说明
-    note_x = cols_x[2] + card_w + 96
+    note_x = cols_x[2] + card_w + 40
     note_w = right - note_x
     if note_w > 240:
-        S.caption(cv, note_x, top - 6, "④ 产物与消费方", color=C.PRIMARY, fnt=S.FS_AXIS)
-        _node(cv, note_x, y0 + 30, note_w, lane_h - 30, "OUT-1", "输出音频",
-              ["ENC/Test/data/<variant>/<level>/",
-               "<name>.wav  1ch/16bit/48000Hz",
-               "长度与输入等长"], C.POSITIVE)
-        _node(cv, note_x, y1 + 30, note_w, lane_h - 30, "OUT-2", "分析管线（本图所在）",
+        S.caption(cv, note_x, cap_y, "④ 产物与消费方", color=C.PRIMARY, fnt=S.FS_MIN)
+        _node(cv, note_x, y0, note_w, lane_h, "OUT-1", "输出音频",
+              ["ENC/Test/data/",
+               "<variant>/<level>/",
+               "<name>.wav 1ch/48000Hz"], C.POSITIVE)
+        _node(cv, note_x, y1, note_w, lane_h, "OUT-2", "分析管线（本图所在）",
               ["ENC/Test/analysis/",
-               "common.py / fig_style.py",
-               "→ ENC/Document/figures/*.png",
-               "run_all.py 一键出图"], C.PRIMARY)
-        _node(cv, note_x, y2 + 30, note_w, lane_h - 30, "OUT-3", "交付物",
-              ["ENC/Document/",
-               "  figures/FigT01…FigT22",
-               "  build_deck.py → 34 页 PPT",
-               "  check_deck.py 结构校验"], C.OPTIMIZED)
+               "common / fig_style",
+               "→ Document/figures/"], C.PRIMARY)
+        _node(cv, note_x, y2, note_w, lane_h, "OUT-3", "交付物",
+              ["ENC/Document/figures/",
+               "FigT01–FigT23 全部图件",
+               "build_deck → 34 页 PPT"], C.OPTIMIZED)
+    else:
+        print("[fig_architecture] 右侧说明列宽仅 %.0f px，已略去 OUT-1..3（见底部注释）" % note_w)
 
-    cv.note("图中路径均相对于仓库根 %s；箭头表示数据流向，编号 P0/T*/C*/OUT* 与开发计划书的任务编号一致。"
-            % ROOT)
+    cv.note("图中路径相对于仓库根；箭头=数据流向，编号同开发计划书任务编号。")
     return cv.save("FigT02_组件架构与数据流.png")
 
 

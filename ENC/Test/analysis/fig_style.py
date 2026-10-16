@@ -392,7 +392,7 @@ def fmt_val(v: float) -> str:
         return "%.1f" % v
     if a >= 1:
         return "%.2f" % v
-    return "%.3f" % v
+    return "%.2f" % v
 
 
 def _fmt_tick_v(v: float) -> str:
@@ -415,8 +415,8 @@ class Canvas:
         self.W, self.H = LAYOUT_SIZE[layout]
         self.img = Image.new("RGB", (self.W, self.H), C.BG)
         self.d = ImageDraw.Draw(self.img)
-        #: 最近一次 `panel(xlabel=...)` 决定的轴标题中心 y（供 `note()` 对齐预算）
-        self._xlabel_pos: int | None = None
+        #: 最近一次 `panel(xlabel=...)` 决定的轴标题位置：[(纵向中心, 横向中心), ...]
+        self._xlabel_pos_list: list[tuple[float, float]] = []
         #: 最近一次 `panel(ylabel=...)` 决定的轴标题左 x
         self._ylabel_pos: int | None = None
         #: 已占用区域（注释避让用）：(x0, y0, x1, y1) 列表
@@ -425,6 +425,10 @@ class Canvas:
         self._boxes: list[tuple] = []
         #: 「图例带」底边（轴区上界）；由 `set_legend_band()` 设定
         self._legend_band_bottom: int | None = None
+        #: 图例带是否已被占用（一个画布只允许一个图例进带）
+        self._legend_band_used = False
+        #: 最近一次 `panel()` 的轴区下沿（供 `note()` 约束注释不得跑到轴区之上）
+        self._plot_bottom: float | None = None
         self._prep_margins()
         self._draw_header()
 
@@ -464,8 +468,16 @@ class Canvas:
 
     # -- 占位管理 --------------------------------------------------------
     def occupy(self, box) -> None:
-        """登记一块已绘制区域，供 `note()` 自动避让。"""
-        self._occupied.append(tuple(float(v) for v in box))
+        """登记一块已绘制区域，供 `note()` / `pixel_note(avoid=True)` 自动避让。"""
+        if box is None:
+            return
+        try:
+            vals = [float(v) for v in box]
+        except (TypeError, ValueError):
+            return
+        if len(vals) != 4 or any(v != v for v in vals):   # NaN 检查
+            return
+        self._occupied.append(tuple(vals))
 
     def text_bottom(self, kind: str) -> float | None:
         """返回指定类型元素已登记的底边 y（用于垂直预算串接）。"""
@@ -517,6 +529,54 @@ class Canvas:
         self.box(EL_FIGID, fx, 14, fx + fw, 16 + fh + 6, self.fig_id)
 
     # -- 绘图区 ----------------------------------------------------------
+    def set_bottom_reserve(self, px: int) -> None:
+        """调整底部「注释层」预留高度（默认值由版位给出：full/half 96–100、strip 106）。
+
+        多面板图（FigT03/05/15/19…）在 445 / 625 px 的总高里塞 2–3 个子图时，
+        默认的注释预留会把轴区压到放不下，于是各行"往下挤"互相压叠——这是
+        「空间不足时就地挤」这条根因的源头之一。本方法让脚本把该预留**显式收紧**
+        （不需要底部注释的图给 16–40 即可），把空间还给子图。
+
+        预留小于实际注释高度时 `note()` 会因空间不足自动略去注释并打印提示。
+        """
+        self.bottom0 = max(16, int(px))
+
+    def stack_rows(self, n: int, top: float | None = None, bottom: float | None = None,
+                   gap: float = 26.0, weights=None, caption_h: float = 0.0,
+                   x_left: float | None = None, x_right: float | None = None):
+        """把纵向区间切成 `n` 行轴区，返回 `[((x0, y0, x1, y1), caption_y), ...]`。
+
+        多面板图"子图挤压"的根因是手算行高（`(bottom-top-gap*(n-1))/n`）：只要
+        行标题与 x 刻度带占的高度没被扣干净，后一行就会压到前一行的刻度带上。
+        本方法把三层预算显式化——行标题 `caption_h`（放在轴区**上方**且计入预算）、
+        轴区本体、行间距 `gap`——并按 `weights` 分配剩余高度。
+
+        `caption_h=0` 表示行标题改为画在轴区**以内**（不再单独占高，进一步省空间）。
+        """
+        t = (self.top0 + 8.0) if top is None else float(top)
+        b = (self.H - self.bottom0) if bottom is None else float(bottom)
+        x0 = self.pad_l if x_left is None else float(x_left)
+        x1 = (self.W - self.pad_r) if x_right is None else float(x_right)
+        n = max(1, int(n))
+        ws = [float(w) for w in weights] if weights else [1.0] * n
+        if len(ws) != n:
+            raise ValueError("weights 长度 %d ≠ 行数 %d" % (len(ws), n))
+        tot_w = sum(ws) or float(n)
+        avail = (b - t) - caption_h * n - gap * (n - 1)
+        if avail <= 40 * n:
+            raise ValueError("纵向空间不足：可用 %.0f px / %d 行（需 ≥ %d px）"
+                             % (avail, n, 40 * n))
+        unit = avail / tot_w
+        out = []
+        y = t
+        for i, wt in enumerate(ws):
+            cap_y = y
+            y += caption_h
+            hh = unit * wt
+            out.append(((x0, y, x1, y + hh), cap_y))
+            y += hh + gap
+        return out
+
     def set_legend_band(self, rows: int = 2, fnt: int = FS_LEGEND) -> float:
         """在轴区上方预留「图例带」，返回该带的底边 y（应作为轴区上界）。
 
@@ -525,19 +585,33 @@ class Canvas:
 
         `rows` 要按**最坏情况**给（默认 2 行）：图例项若干宽度不足而折行，框会变高；
         只按一行预留会让框向下溢出到轴区顶部，又变成遮挡。
+
+        多面板图注意：一个画布上**只有第一个图例**能进带，其余图例自动退回轴内按
+        数据密度选位（否则两个图例会叠印在同一条带里，FigT19 曾如此）。
         """
         _, h = text_size(self.d, "汉", font(fnt))
         rows = max(1, int(rows))
-        self._legend_band_bottom = int(self.top0 + rows * (h + 8) + 16)
+        # 带宽 = 行数 × 行距 + 边框/间隙余量；图例框在带内底部对齐，
+        # 因此必须按「框实际可能的高度」预留，不能只留一行。
+        # 用**绝对高度**预留，不靠字号推算：图例框可达 84 px（中英混排多行），
+        # 少留一点就会向下溢入轴区、重新变成"图例压数据"。宁多勿少。
+        band_h = max(124, rows * (h + 10) + 48)
+        self._legend_band_bottom = int(self.top0 + band_h)
+        self._legend_band_used = False
         return float(self._legend_band_bottom)
 
     def panel(self, rect=None, ylabel: str = "", xlabel: str = "",
               ylim=None, xlim=None, ylog: bool = False, xlog: bool = False,
-              ytick_target: int = 0, xtick_target: int = 0) -> "Axes":
+              ytick_target: int = 0, xtick_target: int = 0,
+              xtick_rows: int = 1) -> "Axes":
         """新建一个 `Axes`。
 
         `rect=(x0, y0, x1, y1)` 为**轴区域**像素范围（不含轴标题占位）。
         省略 `rect` 时占满整页可用区域。坐标轴标题占位由 `Axes` 自动从边缘挤入。
+
+        `xtick_rows` 声明本行 x 刻度带**最多**占几行文字（类目标签过密时用
+        `grid(xlabel_rows=2)` 做两行错排防粘连）。它直接参与底部预算，
+        因此必须在建面板时就声明，否则刻度带会挤掉轴标题。
         """
         if rect is None:
             rect = (self.pad_l, self.top0, self.W - self.pad_r, self.H - self.bottom0)
@@ -548,11 +622,12 @@ class Canvas:
         # 避免"轴标题与注释互相挤占"导致其中一方越出画布。
         if xlabel:
             # x 轴标题的位置**以画布底边为基准反推**。各层高度必须与绘制端一致：
-            #   刻度标签带实际高度 = 10（`grid()` 的 y1+10 偏移）+ tick_h
+            #   刻度标签带实际高度 = 10（`grid()` 的 y1+10 偏移）+ 行数×行高
             #   轴标题高度 = axis_h
             _, tick_h = text_size(self.d, "汉", font(FS_TICK))
             _, axis_h = text_size(self.d, "汉", font(FS_AXIS))
-            band_h = tick_h + 12                     # 与 grid() 的偏移口径对齐
+            rows = max(1, int(xtick_rows))
+            band_h = rows * tick_h + (rows - 1) * 4 + 12   # 与 grid() 的偏移口径对齐
             label_cy = self.H - self.bottom0 - axis_h / 2.0 - 4
             y1_target = label_cy - axis_h / 2.0 - 10 - band_h
             # 仅在**不会造成倒置**时收紧 y1：多面板图传入的 rect 可能本就低于该底线
@@ -561,9 +636,10 @@ class Canvas:
             if y1 > y1_target and y1_target > y0 + 40:
                 y1 = y1_target
             self._xlabel_pos = int(round(y1 + band_h + 10 + axis_h / 2.0))
-            if not hasattr(self, "_xlabel_pos_list"):
-                self._xlabel_pos_list = []
-            self._xlabel_pos_list.append(self._xlabel_pos)
+            # 记 (纵向中心, 横向中心)：**横向必须居中于本轴区**，不能居中于画布——
+            # 多面板/带色条的图的轴区不在画布中线上，按画布居中的轴标题会明显偏置
+            # （曾使 FigT04 的「时间 (s)」偏左 87 px 落到某个刻度下方）。
+            self._xlabel_pos_list.append((self._xlabel_pos, (float(x0) + float(x1)) / 2.0))
             self._xlabel_reserve = 0
         if ylabel:
             self._ylabel_pos = max(6, int(x0) - 106)
@@ -571,7 +647,9 @@ class Canvas:
             y0 = max(self.top0, y1 - 120.0)
         ax = Axes(self, (x0, y0, x1, y1), ylabel=ylabel, xlabel=xlabel,
                   ylim=ylim, xlim=xlim, ylog=ylog, xlog=xlog,
-                  ytick_target=ytick_target, xtick_target=xtick_target)
+                  ytick_target=ytick_target, xtick_target=xtick_target,
+                  xtick_rows=xtick_rows)
+        self._plot_bottom = max(self._plot_bottom or 0.0, float(y1))
         return ax
 
     # -- 输出 ------------------------------------------------------------
@@ -603,10 +681,23 @@ class Canvas:
 
         纵向约束（硬）：注释块必须**整体**落在
         `[轴标题下缘 + 8, 画布底 - 8]` 区间内，且不与任何已占区域相交。
-        在满足约束的前提下**尽量贴底**；若空间不足则**自动略去**注释
-        （改由标题/轴标题承载说明）——绝不叠印、绝不越出画布。
+        降级顺序：① 缩字号（28 → `FS_MIN`）→ ② 在满足约束的前提下**尽量贴底**
+        → ③ 仍放不下则**自动略去**注释（说明改由标题/轴标题承载）。
+        绝不叠印、绝不越出画布、绝不截断成省略号。
         """
-        f = font(FS_NOTE)
+        for size in (FS_NOTE, FS_MIN):
+            ok, total, lo_limit, hi_limit, nln = self._try_note(text, size, y)
+            if ok:
+                return
+            last = (size, total, lo_limit, hi_limit, nln)
+        print("[fig_style] 提示: 底部注释在最小字号 %d px 下仍放不下"
+              "（%d 行，需 %.0f px；可用区间 [%.0f, %d] 即 %.0f px），已略去注释: %s"
+              % (last[0], last[4], last[1], last[2], last[3],
+                 max(0.0, last[3] - last[2]), str(text)[:36]))
+
+    def _try_note(self, text: str, size: int, y: int | None):
+        """按指定字号尝试绘制底部注释；返回 `(是否成功, 需要高度, 下限, 上限)`。"""
+        f = font(size)
         max_w = self.W - self.pad_l - self.pad_r
         lines = wrap_text(self.d, text, f, max_w)
         _, h = text_size(self.d, "汉", f)
@@ -614,7 +705,9 @@ class Canvas:
         total = line_h * len(lines)
 
         hi_limit = self.H - 16                     # 留出字形下沿与抗锯齿余量
-        lo_limit = 2                               # 注释块顶边的下限
+        # 注释顶边下限：必须**在轴区之下**（或轴标题之下），否则会跑到顶部标题上。
+        plot_bottom = self._plot_bottom if self._plot_bottom is not None else self.top0
+        lo_limit = int(plot_bottom + 8)
         cur = self.text_bottom(EL_XLABEL) or self.text_bottom(EL_XTICK)
         if cur is not None:
             lo_limit = max(lo_limit, int(cur + 8))
@@ -636,10 +729,8 @@ class Canvas:
                    float(cand + total))
             self.occupy(box)
             self.box(EL_NOTE, *box, "注释：%s" % text[:40])
-            return
-        avail = max(0, hi_limit - total - lo_limit)
-        print("[fig_style] 提示: 底部注释放不下（需 %d px，可用 %d px），已略去注释"
-              % (total, avail))
+            return True, total, lo_limit, hi_limit, len(lines)
+        return False, total, lo_limit, hi_limit, len(lines)
 
 
 # --------------------------------------------------------------------------
@@ -651,7 +742,7 @@ class Axes:
 
     def __init__(self, canvas: Canvas, rect, ylabel: str = "", xlabel: str = "",
                  ylim=None, xlim=None, ylog: bool = False, xlog: bool = False,
-                 ytick_target: int = 0, xtick_target: int = 0):
+                 ytick_target: int = 0, xtick_target: int = 0, xtick_rows: int = 1):
         self.cv = canvas
         self.d = canvas.d
         self.rect = tuple(float(v) for v in rect)
@@ -664,6 +755,8 @@ class Axes:
         base_target = 4 if canvas.layout == "strip" else 6
         self.ytick_target = int(ytick_target or base_target)
         self.xtick_target = int(xtick_target or (9 if canvas.layout != "strip" else 12))
+        #: x 刻度带允许的行数（由 `Canvas.panel(xtick_rows=...)` 声明，参与底部预算）
+        self.xtick_rows = max(1, int(xtick_rows))
 
         #: 轴标题带（供热力图 / 表格精确摆放）
         self.x0, self.y0, self.x1, self.y1 = self.rect
@@ -879,9 +972,21 @@ class Axes:
     def _tick_values_y(self) -> list[float]:
         if self._ylim is None:
             return []
+        room = max(2, int(self.height / 36.0))
         if self.ylog:
-            return ticks_log(self._ylim[0], self._ylim[1])
-        want = max(2, self.ytick_target)
+            vals = ticks_log(self._ylim[0], self._ylim[1])
+            # 对数刻度同样会过密：`ticks_log` 在 30 Hz…24 kHz 上会给出 9 个值，
+            # 157 px 高的子图里就会糊成一团（FigT05）。按可用高度等间隔抽稀；
+            # 每刻度预留 36 px（≈28 px 字高 + 8 px 间隙）——常规高度下不抽稀，
+            # 避免把 1e+12 这类中间数量级整级丢掉（FigT07 曾如此）。
+            if len(vals) > room:
+                idx = sorted({int(round(i)) for i in np.linspace(0, len(vals) - 1, room)})
+                vals = [vals[k] for k in idx]
+            return vals
+        # 刻度过密会纵向堆叠：按**可用像素高度**限制刻度数，每个刻度至少占 48 px
+        # （≈ 28 px 字高 + 20 px 间隙）。常规半页/整页图的轴高 ≥ 288 px，
+        # `ytick_target` 仍是有效上限，行为不变。
+        want = max(2, min(int(self.ytick_target), room))
         return ticks_linear(self._ylim[0], self._ylim[1], want)[0]
 
     def _tick_values_x(self) -> list[float]:
@@ -891,7 +996,11 @@ class Axes:
             return ticks_log(self._xlim[0], self._xlim[1])
         lo, hi = self._xlim
         span = hi - lo
-        # 类目轴（整数 + 跨度小）：逐个整数标注，步长按可用宽度自适应
+        # 类目轴：xlim 常见为 (-0.7, n-0.3)，整数点即 0..n-1。
+        if span <= 12 and abs(hi - round(hi)) < 0.6 and (hi - lo) < 12.5:
+            ia, ib = int(np.ceil(lo - 1e-9)), int(np.floor(hi + 1e-9))
+            if ib - ia >= 1 and float(ia) >= 0.0:
+                return [float(v) for v in range(ia, ib + 1)]
         if span <= 12 and float(lo).is_integer() and (span - int(span)) < 1e-9:
             ilo, ihi = int(round(lo)), int(round(hi))
             n = ihi - ilo + 1
@@ -910,13 +1019,21 @@ class Axes:
 
     # -- 底层：网格 + 坐标轴 --------------------------------------------
     def grid(self, vertical: bool = True, horizontal: bool = True,
-             xlabels: list | None = None) -> None:
+             xlabels: list | None = None, xtick_labels: bool = True,
+             xlabel_rows: int = 0) -> None:
         """绘制网格与刻度标签。
 
         **调用时机：数据绘制完成、`autoscale()` 之后**——先把曲线/柱体登记进范围，
         再定标，最后铺网格，刻度才不会与数据错位。
         `xlabels` 提供时按**等距类目**方式标注 x 轴（柱状图场景）：
         值 i（0..n-1）映射到第 i 个标签。
+
+        `xtick_labels=False` 用于**多行共享同一 x 轴**的图（如 FigT03 波形三联）：
+        只画垂直网格线、不画刻度文字，把刻度带高度省给上面几行的轴区；
+        最后一行保留标签即可完整表达时间轴，不丢任何信息。
+
+        `xlabel_rows` 覆盖 `panel(xtick_rows=...)` 声明的行数上限（0 = 用声明的值）。
+        类目标签过密时按「两行错排 → 缩字号（下限 `FS_MIN`）」降级，**绝不粘连**。
         """
         if self._xlim is None or self._ylim is None:
             # 尚无数据：按当前先验范围绘制（避免抛异常打断出图）
@@ -944,32 +1061,81 @@ class Axes:
             self.cv.box(EL_YTICK, ytick_x0, ytick_top, self.x0 - 4, ytick_bot,
                         "y 刻度标签带（最大宽 %.0f px）" % ytick_w)
         # 垂直网格 + x 刻度标签
-        xtick_x0, xtick_x1 = self.x0, self.x1
-        xtick_top, xtick_bot = self.y1 + 4, self.y1 + 4
-        xtick_bbox = None
+        placed: list[tuple[float, str]] = []
         for v in self._tick_values_x():
             xp = self.px(v)
             if not (self.x0 - 1 <= xp <= self.x1 + 1):
                 continue
             if vertical:
                 self.d.line([(xp, self.y0), (xp, self.y1)], fill=C.GRID, width=LW_GRID)
+            if not xtick_labels:
+                continue
             label = self._label_for(v, xlabels)
             if label is None:
                 continue
-            w, h = text_size(self.d, label, f)
-            self.d.text((xp - w / 2.0, self.y1 + 10), label, font=f, fill=C.TEXT)
-            xtick_x0 = min(xtick_x0, xp - w / 2.0)
-            xtick_x1 = max(xtick_x1, xp + w / 2.0)
-            xtick_top = min(xtick_top, self.y1 + 10)
-            xtick_bot = max(xtick_bot, self.y1 + 10 + h)
-            if xtick_bbox is None:
-                xtick_bbox = [xp - w / 2.0, xp + w / 2.0]
-        if xtick_bot > xtick_top:
-            # x 刻度带按轴区宽度裁剪：类目标签可能很宽（如「优化 optimized」），
-            # 不裁剪会让登记的包围盒伸出轴区，干扰重叠检测与留白判定。
-            self.cv.box(EL_XTICK, max(0.0, min(xtick_x0, self.x0)),
-                        xtick_top, min(self.x1, max(xtick_x1, self.x1)),
-                        xtick_bot, "x 刻度标签带")
+            placed.append((xp, str(label)))
+        if not placed:
+            return
+        # 行数上限**只能取 `panel(xtick_rows=...)` 声明的值**：底部预算是按那个值算的，
+        # 脚本单方面多排一行就会把刻度带顶进 x 轴标题里（FigT15/FigT17 曾各重叠 19 px）。
+        want_rows = int(xlabel_rows or self.xtick_rows)
+        self._xlabel_rows_used = max(1, min(want_rows, max(1, int(self.xtick_rows))))
+        xtick_x0, xtick_x1, xtick_top, xtick_bot = self._draw_xtick_labels(placed)
+        # x 刻度带按轴区宽度裁剪：类目标签可能很宽（如「优化 optimized」），
+        # 不裁剪会让登记的包围盒伸出轴区，干扰重叠检测与留白判定。
+        self.cv.box(EL_XTICK, max(0.0, min(xtick_x0, self.x0)),
+                    xtick_top, min(self.x1, max(xtick_x1, self.x1)),
+                    xtick_bot, "x 刻度标签带")
+
+    def _draw_xtick_labels(self, placed: list[tuple[float, str]]):
+        """排布 x 刻度标签并返回包围盒 `(x0, x1, y0, y1)`。
+
+        多分类标签"糊成一团"是版式重灾区（FigT23 四子图的七变体名曾连成
+        「+D1D1D5D1D5D优化版」）。此处按**实际字宽**逐级降级：
+        ① 单行 → ② 两行错排（同一行只隔 2 个刻度，间距翻倍）→ ③ 缩字号（下限 `FS_MIN`）。
+        全程不裁字、不重叠。
+        """
+        xs = [p[0] for p in placed]
+        labels = [p[1] for p in placed]
+        rows_allowed = max(1, int(getattr(self, "_xlabel_rows_used", 1)))
+        chosen = None
+        size = FS_TICK
+        gap = 10.0
+        while size >= FS_MIN:
+            f = font(size)
+            ws = [text_size(self.d, s, f)[0] for s in labels]
+            for r in range(1, rows_allowed + 1):
+                hit = any(xs[i] + ws[i] / 2.0 + gap > xs[i + r] - ws[i + r] / 2.0
+                          for i in range(len(xs) - r))
+                if not hit:
+                    chosen = (size, r, f, ws)
+                    break
+            if chosen:
+                break
+            size -= 2
+        if chosen is None:
+            # 兜底：允许的行数用完仍会相撞（刻度数远超容器宽度）——取最小字号 + 最大行数，
+            # 宁可略微紧贴也不裁字；此时应由脚本减少类目数（精简内容）。
+            size = FS_MIN
+            f = font(size)
+            ws = [text_size(self.d, s, f)[0] for s in labels]
+            chosen = (size, rows_allowed, f, ws)
+            print("[fig_style] 警告: x 轴 %d 个类目标签即使 %d 行错排仍过密，"
+                  "已用最小字号 %d px；建议精简类目或缩短标签" % (len(labels), rows_allowed, size))
+        size, r, f, ws = chosen
+        _, th = text_size(self.d, "汉", f)
+        line_h = th + 4
+        bx0 = by0 = 1e18
+        bx1 = by1 = -1e18
+        for i, (xp, s) in enumerate(placed):
+            row = (i % r) if r > 1 else 0
+            yt = self.y1 + 10 + row * line_h
+            self.d.text((xp - ws[i] / 2.0, yt), s, font=f, fill=C.TEXT)
+            bx0 = min(bx0, xp - ws[i] / 2.0)
+            bx1 = max(bx1, xp + ws[i] / 2.0)
+            by0 = min(by0, yt)
+            by1 = max(by1, yt + th)
+        return bx0, bx1, by0, by1
 
     def _label_for(self, v: float, xlabels: list | None) -> str | None:
         if xlabels is None:
@@ -993,49 +1159,54 @@ class Axes:
             _, tick_h = text_size(self.d, "汉", font(FS_TICK))
             tick_gap = self._tick_w + 26.0
             avail = self.x0 - tick_gap - 8.0
-            tw_, th_ = text_size(self.d, self.ylabel, font(FS_AXIS))
-            need = float(th_ + 8)          # 竖排后横向占用 = 原文本高度
-            # 竖排：所需横向宽度 = 文本高度。文本过长时按**可用轴高截断**（加 `…`），
-            # 而不是改成水平排版——水平排在轴外会压住刻度标签、甚至贴到画布左缘。
-            max_text_w = max(60.0, (self.y1 - self.y0) - 6.0)
-            label = self.ylabel
-            f = font(FS_AXIS)
-            while text_size(self.d, label, f)[0] > max_text_w and len(label) > 2:
-                label = label[:-2] + "…"
-            tw_, th_ = text_size(self.d, label, f)
-            img = Image.new("RGB", (max(8, tw_ + 8), max(8, th_ + 8)), C.BG)
-            ImageDraw.Draw(img).text((4, 4), label, font=f, fill=C.TEXT)
-            rot = img.rotate(90, expand=True, fillcolor=C.BG)
-            rw, rh = rot.size
+            # 竖排：所需横向宽度 = 文本高度。文本过长时**逐级缩小字号**保证完整显示，
+            # 绝不截断成省略号——轴标题缺字会丢失语义，比字号略小更难接受。
+            # 降级顺序：① 缩字号（下限 20 px）→ ② 仍放不下则横排贴轴区左上角（白底）。
             tick_left = self.x0 - (self._tick_w + 12.0)
-            rx = tick_left - 18.0 - rw
-            if rx < 4.0:
-                # 仍放不下：缩到下限字号再试（保持竖排，绝不横向外溢）
-                f = font(FS_MIN)
+            label = self.ylabel
+            avail_v = max(60.0, (self.y1 - self.y0) - 6.0)
+            size = FS_AXIS
+            rw = rh = 0
+            rot = None
+            while size >= 20:
+                f = font(size)
                 tw_, th_ = text_size(self.d, label, f)
-                img = Image.new("RGB", (max(8, tw_ + 8), max(8, th_ + 8)), C.BG)
-                ImageDraw.Draw(img).text((4, 4), label, font=f, fill=C.TEXT)
-                rot = img.rotate(90, expand=True, fillcolor=C.BG)
-                rw, rh = rot.size
+                if tw_ + 10 <= avail_v:
+                    img = Image.new("RGB", (max(8, tw_ + 8), max(8, th_ + 8)), C.BG)
+                    ImageDraw.Draw(img).text((4, 4), label, font=f, fill=C.TEXT)
+                    r2 = img.rotate(90, expand=True, fillcolor=C.BG)
+                    if tick_left - 18.0 - r2.size[0] >= 4.0:
+                        rot, rw, rh = r2, r2.size[0], r2.size[1]
+                        break
+                size -= 2
+            if rot is not None:
                 rx = tick_left - 18.0 - rw
-            rx = max(4.0, rx)
-            ry = self.y0 + (self.y1 - self.y0) / 2.0 - rh / 2.0
-            ry = max(self.cv.top0 - 30.0, min(ry, self.cv.H - rh - 6.0))
-            self.cv.img.paste(rot, (int(round(rx)), int(round(ry))))
-            self.cv.box(EL_YLABEL, rx, ry, rx + rw, ry + rh, label)
+                ry = self.y0 + (self.y1 - self.y0) / 2.0 - rh / 2.0
+                ry = max(self.cv.top0 - 30.0, min(ry, self.cv.H - rh - 6.0))
+                self.cv.img.paste(rot, (int(round(rx)), int(round(ry))))
+                self.cv.box(EL_YLABEL, rx, ry, rx + rw, ry + rh, label)
+            else:
+                # 竖排放不下：横排贴轴区左上角内侧（白底保证可读），不截断、不重叠
+                f = font(20)
+                tw_, th_ = text_size(self.d, label, f)
+                lx, ly = self.x0 + 8.0, self.y0 + 6.0
+                self.d.rectangle([lx - 4, ly - 2, lx + tw_ + 4, ly + th_ + 4], fill=C.BG)
+                self.d.text((lx, ly), label, font=f, fill=C.TEXT)
+                self.cv.box(EL_YLABEL, lx - 4, ly - 2, lx + tw_ + 4, ly + th_ + 4, label)
         if self.xlabel:
-            # x 轴标题位置**只由 `Canvas.panel()` 预算**（以画布底边反推）。
+            # x 轴标题位置**只由 `Canvas.panel()` 预算**（以画布底边反推、按轴区横向居中）。
             # 此处不得另算公式，否则两处不一致会把标题推出画布或压住刻度带。
             pos_list = getattr(self.cv, "_xlabel_pos_list", None)
             if pos_list:
-                yc = pos_list.pop(0)
+                yc, xc = pos_list.pop(0)
             else:
                 _, tick_h = text_size(self.d, "汉", font(FS_TICK))
                 _, axis_h = text_size(self.d, "汉", font(FS_AXIS))
                 yc = int(round(self.y1 + tick_h + 8 + axis_h / 2.0))
-            draw_text_center(self.d, self.cv.W / 2.0, yc, self.xlabel, font(FS_AXIS), C.TEXT)
+                xc = (self.x0 + self.x1) / 2.0
+            draw_text_center(self.d, xc, yc, self.xlabel, font(FS_AXIS), C.TEXT)
             tw, th = text_size(self.d, self.xlabel, font(FS_AXIS))
-            xl = ((self.cv.W - tw) / 2.0, yc - th / 2.0, (self.cv.W + tw) / 2.0, yc + th / 2.0)
+            xl = (xc - tw / 2.0, yc - th / 2.0, xc + tw / 2.0, yc + th / 2.0)
             self.cv.box(EL_XLABEL, *xl, self.xlabel)
             self.cv.occupy(xl)
         if self.ylabel:
@@ -1155,8 +1326,16 @@ class Axes:
     def bars(self, values, centers=None, width: float = 0.8, color: str = C.PRIMARY,
              edge: str | None = None, label: str | None = None, offset: float = 0.0,
              show_value: bool = False, value_font: int = FS_LABEL,
-             outline_only: bool = False, hatch_dot: bool = False) -> None:
-        """柱状图。`centers` 默认 0..n-1；`offset` 用于双柱并排。"""
+             outline_only: bool = False, hatch_dot: bool = False,
+             value_dy: float = 0.0, value_stroke: int = 2,
+             value_bg: bool = False) -> None:
+        """柱状图。`centers` 默认 0..n-1；`offset` 用于双柱并排。
+
+        `value_dy` 把柱顶数值标签整体上移/下移若干像素，用于**并排柱的标签垂直错排**：
+        柱间距小于标签宽度时（FigT13 的分频带三柱），同排标签末位字符会互相压盖，
+        错开后各自独立可读；数字本身不做任何缩短或省略。
+        `value_stroke` 是标签的白描边宽度（散点很密时加粗，如 FigT23）。
+        """
         va = np.asarray(values, dtype=np.float64).ravel()
         if va.size == 0:
             return
@@ -1202,9 +1381,17 @@ class Axes:
                 w, h = text_size(self.d, txt, f)
                 tx = (xa + xb) / 2.0 - w / 2.0
                 ty = yt - h - 6 if yt <= yb else yb - h - 6
+                ty += value_dy
                 if ty < self.y0 - h:
                     ty = self.y0 - h + 4
-                self.d.text((tx, ty), txt, font=f, fill=C.TEXT)
+                # 白描边 + 可选实心白底：柱顶数值标签常被逐文件散点、网格线或
+                # 曲线穿过（FigT23/FigT21 均如此）。散点云可能高过柱顶数十像素，
+                # 仅靠偏移躲不开——`value_bg=True` 时铺实心白底，数字必定完整可读。
+                if value_bg:
+                    self.d.rectangle([tx - 3, ty - 2, tx + w + 3, ty + h + 2], fill=C.BG)
+                self.d.text((tx, ty), txt, font=f, fill=C.TEXT,
+                            stroke_width=max(0, int(value_stroke)), stroke_fill=C.BG)
+                self.cv.occupy((tx - 2, ty - 2, tx + w + 2, ty + h + 2))
         if label:
             self._legend_items.append(("patch", color, label, 0))
 
@@ -1223,7 +1410,13 @@ class Axes:
         if annotate:
             f = font(annotate_font)
             w, h = text_size(self.d, annotate, f)
-            self.d.text((self.x1 - w - 4, yp - h - 4), annotate, font=f, fill=color)
+            # 标注画在参考线**下方**并铺白底：放在线上方时，只有 4–10 px 余量，
+            # 字底仍会与线、与紧邻的曲线贴合（FigT19 的「P95 = … μs」曾如此）。
+            ty = yp + 6
+            if ty + h > self.y1:
+                ty = yp - h - 6
+            self.d.rectangle([self.x1 - w - 10, ty - 2, self.x1 - 2, ty + h + 2], fill=C.BG)
+            self.d.text((self.x1 - w - 6, ty), annotate, font=f, fill=color)
         if label:
             self._legend_items.append(("line", color, label, lw))
 
@@ -1317,8 +1510,15 @@ class Axes:
             self._legend_items.append(("marker", color, label, r))
 
     def text(self, x: float, y: float, s: str, color: str = C.TEXT,
-             fnt: int = FS_LABEL, anchor: str = "lt", bold: bool = False) -> None:
-        """按数据坐标放文本；`anchor` 为两字符 `lt/lm/lb/ct/cm/cb/rt/rm/rb`。"""
+             fnt: int = FS_LABEL, anchor: str = "lt", bold: bool = False,
+             dy: float = 0.0, stroke: int = 0, bg: bool = False) -> None:
+        """按数据坐标放文本；`anchor` 为两字符 `lt/lm/lb/ct/cm/cb/rt/rm/rb`。
+
+        `dy` 是纵向像素微调：用于把标签从须线/参考线上挪开（既不压线也不丢字）。
+        `stroke>0` 加白描边、`bg=True` 铺实心白底：箱线图的离群点、逐文件散点
+        会成列穿过数值标签（FigT21 的「1.2」「0.6」被点云砸在小数点上），
+        散点云高度不可预测，只有实心白底能保证数字完整可读。
+        """
         f = font(fnt, bold)
         w, h = text_size(self.d, s, f)
         xp, yp = self.px(x), self.py(y)
@@ -1332,11 +1532,17 @@ class Axes:
             yp -= h / 2.0
         else:
             yp -= h
-        self.d.text((xp, yp), s, font=f, fill=color)
+        if bg:
+            self.d.rectangle([xp - 3, yp + dy - 2, xp + w + 3, yp + dy + h + 2], fill=C.BG)
+        if stroke > 0:
+            self.d.text((xp, yp + dy), s, font=f, fill=color,
+                        stroke_width=int(stroke), stroke_fill=C.BG)
+        else:
+            self.d.text((xp, yp + dy), s, font=f, fill=color)
 
     def boxplot(self, stats: dict, center: float = 0.0, width: float = 0.5,
                 color: str = C.PRIMARY, label: str | None = None,
-                show_fliers: bool = True) -> None:
+                show_fliers: bool = True, flier_hollow: bool = False) -> None:
         """单个箱线（`common.box_stats` 的返回值）。"""
         w = self.px(center + width / 2.0) - self.px(center)
         xa, xb = self.px(center) - w, self.px(center) + w
@@ -1364,10 +1570,23 @@ class Axes:
         # 中位线
         self.d.line([(xa, y_med), (xb, y_med)], fill=color, width=4)
         if show_fliers:
-            for v in np.asarray(stats.get("fliers", [])).ravel()[:40]:
-                if np.isfinite(v):
-                    yp = self.py(float(v))
-                    self.d.ellipse([xm - 3, yp - 3, xm + 3, yp + 3], fill=C.WARN)
+            fl = np.asarray(stats.get("fliers", [])).ravel()[:40]
+            n_fl = int(fl.size)
+            for k, v in enumerate(fl):
+                if not np.isfinite(v):
+                    continue
+                yp = self.py(float(v))
+                # 确定性横向抖动（`(k*37)%7-3` 是固定序列，不用随机数，出图可复现）：
+                # 离群点全部画在箱体中轴上时，密集段会堆成 7 px 宽的**实心长条**，
+                # 一旦被邻近文字描边削到就呈现"断成两截的细线"（FigT21 实测）。
+                # 散开 ±4 px 后点云形态恢复，个别点被削也只是边缘缺口。
+                # 只改显示位置，不动数据值。
+                dx = float((k * 37) % 7 - 3) * 1.4 if (flier_hollow and n_fl > 1) else 0.0
+                if flier_hollow:
+                    self.d.ellipse([xm + dx - 3, yp - 3, xm + dx + 3, yp + 3],
+                                   outline=C.WARN, width=2)
+                else:
+                    self.d.ellipse([xm + dx - 3, yp - 3, xm + dx + 3, yp + 3], fill=C.WARN)
         if label:
             self._legend_items.append(("patch", color, label, 0))
 
@@ -1419,37 +1638,80 @@ class Axes:
             self.d.line([(x1, yp), (x1 + 6, yp)], fill=C.TEXT, width=LW_GRID)
             self.d.text((x1 + 10, yp - 12), fmt_tick(val), font=f, fill=C.TEXT)
         if label:
-            draw_text_center(self.d, (x0 + x1) / 2.0, y0 - 22, label, f, C.TEXT)
+            # 标题画在色条**上方 34 px**：色条顶端刻度标签（如「0」）占 y0-12 … y0+13，
+            # 二者在 y0-22 处会字形相接（FigT05 实测）。
+            draw_text_center(self.d, (x0 + x1) / 2.0, y0 - 34, label, f, C.TEXT)
 
     # -- 表格 ------------------------------------------------------------
     def table(self, headers: list[str], rows: list[list[str]], rect=None,
               col_widths: list[float] | None = None, fnt: int = FS_LABEL,
               row_h: int | None = None, highlight: dict | None = None,
-              zebra: bool = True) -> None:
-        """在轴区域（或 `rect`）内绘制表格。`highlight[(r,c)] = "#c0392b"` 指定单元格文字色。"""
+              zebra: bool = True, pad: int = 16) -> None:
+        """在轴区域（或 `rect`）内绘制表格。`highlight[(r,c)] = "#c0392b"` 指定单元格文字色。
+
+        列宽策略（**表头优先**，这是修掉"表头被截断、单元格跨列溢出"的关键）：
+          ① 每列至少容纳自己的表头文本 + 两侧内边距 —— 表头永远不会被压到放不下；
+          ② 若各列自然宽度（表头与单元格取大者）之和放得下，直接采用；
+          ③ 否则把剩余宽度按各列"数据超出表头的部分"比例分配；
+          ④ 连表头都放不下时按权重等比压缩并打印告警，由 `fit_text` 缩字号兜底。
+        单元格**绝不截断成省略号**：先缩字号（下限 `FS_MIN`），必要时折行。
+        """
         if not headers:
             return
         x0, y0, x1, y1 = rect if rect else (self.x0, self.y0, self.x1, self.y1)
+        n_col = len(headers)
+        avail_w = float(x1 - x0)
+        fm = font(fnt)
+        fh = font(fnt, True)
+        head_w: list[float] = []
+        nat: list[float] = []
+        for j in range(n_col):
+            hw = float(text_size(self.d, str(headers[j]), fh)[0])
+            wj = hw
+            for r in rows:
+                if j < len(r):
+                    wj = max(wj, float(text_size(self.d, str(r[j]), fm)[0]))
+            head_w.append(hw)
+            nat.append(wj)
+        min_total = sum(h + pad for h in head_w)
+        if sum(nat) + pad * n_col <= avail_w:
+            widths = [w + pad for w in nat]
+        elif min_total <= avail_w:
+            extra = avail_w - min_total
+            need = [max(0.0, n - h) for n, h in zip(nat, head_w)]
+            tot_need = sum(need)
+            if tot_need <= 0:
+                widths = [h + pad + extra / n_col for h in head_w]
+            else:
+                widths = [h + pad + extra * (nd / tot_need)
+                          for h, nd in zip(head_w, need)]
+        else:
+            weights = [float(w) for w in (col_widths or nat)]
+            if len(weights) != n_col:
+                weights = nat
+            tw = sum(weights) or 1.0
+            widths = [avail_w * (w / tw) for w in weights]
+            print("[fig_style] 警告: 表格 %d 列的表头本身就需要 %.0f px > 可用 %.0f px，"
+                  "已等比压缩；建议减少列数或缩短表头" % (n_col, min_total, avail_w))
         n_rows = len(rows) + 1
         rh = int(row_h or min(52, max(30, (y1 - y0) / max(1, n_rows))))
-        n_col = len(headers)
-        if col_widths:
-            total = float(sum(col_widths))
-            widths = [(x1 - x0) * (w / total) for w in col_widths]
-        else:
-            widths = [(x1 - x0) / n_col] * n_col
-        fh = font(fnt, True)
-        fb = font(fnt)
+        # 行高必须容得下字号：否则文字会压到相邻行
+        rh = max(rh, fnt + 10)
+        max_lines = max(1, int(rh / float(fnt + 4)))
         yy = y0
         # 表头
         self.d.rectangle([x0, yy, x1, yy + rh], fill=mix_white(C.PRIMARY, 0.82))
         cx = x0
         for j, htxt in enumerate(headers):
-            self.fit_text(cx + 8, yy + rh / 2.0, htxt, fh, widths[j] - 16, C.TEXT, center=False)
+            self.fit_text(cx + pad / 2.0, yy + rh / 2.0, htxt, fh, widths[j] - pad, C.TEXT,
+                          center=False, bold=True, max_lines=max_lines)
             cx += widths[j]
         yy += rh
+        drawn = 0
         for i, row in enumerate(rows):
             if yy + rh > y1 + 2:
+                print("[fig_style] 警告: 表格第 %d 行起放不下（可用高 %.0f px，已画 %d/%d 行）"
+                      "—— 请缩小 row_h 或提高表格高度" % (i + 1, y1 - y0, drawn, len(rows)))
                 break
             if zebra and i % 2 == 1:
                 self.d.rectangle([x0, yy, x1, yy + rh], fill="#f7f9fb")
@@ -1458,37 +1720,48 @@ class Axes:
                 cell = row[j] if j < len(row) else ""
                 col = (highlight or {}).get((i, j), C.TEXT)
                 self.d.line([(cx, yy), (cx, yy + rh)], fill=C.GRID, width=LW_GRID)
-                self.fit_text(cx + 8, yy + rh / 2.0, cell, fb, widths[j] - 16, col, center=False)
+                self.fit_text(cx + pad / 2.0, yy + rh / 2.0, cell, fm, widths[j] - pad, col,
+                              center=False, max_lines=max_lines)
                 cx += widths[j]
             self.d.line([(x0, yy + rh), (x1, yy + rh)], fill=C.GRID, width=LW_GRID)
             yy += rh
+            drawn += 1
         self.d.rectangle([x0, y0, x1, yy], outline=C.TEXT, width=LW_GRID)
+        # 表格是"已占区域"：登记后底部注释才能正确避让（否则注释会压到表格上）
+        self.cv.occupy((x0, y0, x1, yy))
 
     def fit_text(self, x: float, y_center: float, s: str, fnt, max_w: float,
-                 color: str = C.TEXT, center: bool = True) -> None:
-        """写入文本；超宽时自动截断为 `…`（只改文本，不改字号，不越界）。
+                 color: str = C.TEXT, center: bool = True, bold: bool = False,
+                 max_lines: int = 1, line_gap: int = 4) -> int:
+        """写入文本，**绝不截断成省略号**，也绝不让文字跑到容器之外；返回实际行数。
 
-        `max_w` 过小时（例如图例框被夹得过窄）退化为单个 `…`，绝不绘制到框外。
+        这里也曾是"零省略号"规则的漏洞（根因 B）：原实现超宽时砍字补 `…`，
+        表格里的「±32768」被切掉尾数、卡片路径被切掉目录名。现在改为
+        ① 缩字号（下限 `FS_MIN`）→ ② 折行（最多 `max_lines` 行，`max_lines>1`
+        时以 `y_center` 为整块垂直中心）。文字宽度仍然受画布边界硬约束。
         """
-        if max_w <= 4:
-            self.d.text((x, y_center), "…", font=fnt, fill=color)
-            return
-        w, h = text_size(self.d, s, fnt)
-        shown = s
-        if w > max_w:
-            while shown and w > max_w:
-                shown = shown[:-1]
-                if not shown:
-                    break
-                w, h = text_size(self.d, shown + "…", fnt)
-            shown = (shown + "…") if shown else "…"
-            w, h = text_size(self.d, shown, fnt)
-        xx = x + (max_w - w) / 2.0 if center else x
-        # 硬约束：文本不得伸出画布（含 4 px 留白）
-        xx = max(4.0, min(xx, self.cv.W - 4.0 - w))
-        yy = y_center - h / 2.0
-        yy = max(2.0, min(yy, self.cv.H - 2.0 - h))
-        self.d.text((xx, yy), shown, font=fnt, fill=color)
+        s = str(s)
+        if not s:
+            return 0
+        size = int(getattr(fnt, "size", FS_LABEL))
+        lines, used = _fit_lines(self.d, [s], size, bold, max(8.0, float(max_w)),
+                                 max(1, int(max_lines)), line_gap)
+        if len(lines) > max_lines:
+            lines = lines[:max_lines]
+        f = font(used, bold)
+        _, h = text_size(self.d, "汉", f)
+        lh = h + line_gap
+        total = lh * len(lines) - line_gap
+        yy = y_center - total / 2.0
+        for i, ln in enumerate(lines):
+            w, _ = text_size(self.d, ln, f)
+            xx = x + (max_w - w) / 2.0 if center else x
+            # 硬约束：文本不得伸出画布（含 4 px 留白）
+            xx = max(4.0, min(xx, self.cv.W - 4.0 - w))
+            yt = yy + i * lh
+            yt = max(2.0, min(yt, self.cv.H - 2.0 - h))
+            self.d.text((xx, yt), ln, font=f, fill=color)
+        return len(lines)
 
     def note(self, s: str, color: str = C.TEXT, fnt: int = FS_NOTE,
              anchor: str = "lt") -> None:
@@ -1500,10 +1773,13 @@ class Axes:
     def note_px(self, x: float, y: float, s: str, color: str = C.TEXT,
                 fnt: int = FS_NOTE, anchor: str = "lt", bold: bool = False,
                 max_w: float | None = None) -> None:
-        """轴内注释（像素坐标，相对整张画布），必要时自动截断。"""
+        """轴内注释（像素坐标，相对整张画布）。
+
+        `max_w` 给定时走 `fit_text`（缩字号 + 折行，**不截断**）。
+        """
         f = font(fnt, bold)
         if max_w is not None:
-            self.fit_text(x, y, s, f, max_w, color, center=False)
+            self.fit_text(x, y, s, f, max_w, color, center=False, bold=bold)
             return
         w, h = text_size(self.d, s, f)
         xx = x - w / 2.0 if anchor[0] == "c" else (x - w if anchor[0] == "r" else x)
@@ -1512,19 +1788,35 @@ class Axes:
 
     def pixel_note(self, x: float, y: float, s: str, color: str = C.TEXT,
                    fnt: int = FS_NOTE, bold: bool = False,
-                   max_w: float | None = None, line_gap: int = 10) -> int:
+                   max_w: float | None = None, line_gap: int = 10,
+                   avoid: bool = False) -> int:
         """画布像素坐标的**自动折行**注释块；返回占用行数。
 
         与 `note_px(max_w=...)`（截断）不同，本方法保留完整文本，适合结论性长句。
+        `avoid=True` 时从 `(x, y)` 起向下找第一段不与已登记元素（刻度带、柱顶数值
+        标签等）冲突的空档，用于子图内注解，避免压住数据标签。
         """
         f = font(fnt, bold)
         avail = max_w if max_w is not None else (self.cv.W - x - self.cv.pad_r)
         lines = wrap_text(self.d, s, f, max(40.0, avail))
         _, h = text_size(self.d, "汉", f)
         step = h + line_gap
-        yy = max(2.0, min(float(y), self.cv.H - step * len(lines) - 4))
+        total = step * len(lines)
+        yy = float(y)
+        if avoid:
+            for _ in range(10):
+                hit = None
+                for ox0, oy0, ox1, oy1 in [b for b in self.cv._occupied if b is not None]:
+                    if (yy + total + 4 > oy0 and yy - 4 < oy1
+                            and x < ox1 and (x + avail) > ox0):
+                        hit = oy1 if hit is None else max(hit, oy1)
+                if hit is None:
+                    break
+                yy = hit + 6.0
+        yy = max(2.0, min(yy, self.cv.H - total - 4))
         for i, ln in enumerate(lines):
             self.d.text((x, yy + i * step), ln, font=f, fill=color)
+        self.cv.occupy((x, yy, x + avail, yy + total))
         return len(lines)
 
     # -- 图例 ------------------------------------------------------------
@@ -1622,7 +1914,8 @@ class Axes:
         if len(items) > 1:
             f = font(size)
             entry_w = [sw + gap + text_size(self.d, str(it[2]), f)[0] + vgap for it in items]
-            if sum(entry_w) + pad * 2 - vgap <= avail_w:
+            # 横排要求**留出 12% 余量**：刚好等宽时字体度量误差会让相邻项文字相撞
+            if sum(entry_w) + pad * 2 - vgap <= avail_w * 0.88:
                 inline = True
 
         if inline:
@@ -1644,15 +1937,22 @@ class Axes:
                     break
                 size = max(FS_MIN, size - 2)
 
+        # 一个画布上只有**第一个**图例能进带；多面板图的后续图例若也挤进带，
+        # 两者会叠印在同一行（FigT19 曾出现两个图例互相压盖）。它们退回轴内选位。
+        use_band = (self.cv._legend_band_bottom is not None
+                    and not self.cv._legend_band_used
+                    and not outside)
         if auto_loc:
-            if self.cv._legend_band_bottom is not None:
+            if use_band:
                 # 已预留"图例带"：图例排在轴区之外、标题之下的专属一行，绝不压数据
                 loc = "tl"
             else:
                 # 否则按**实际数据密度**挑遮挡最少的角落（比仅看纵向重心可靠）
                 loc = self._best_legend_corner(box_w, box_h) if not outside else "tr"
-        if self.cv._legend_band_bottom is not None:
-            y0 = max(4.0, float(self.cv._legend_band_bottom) - box_h - 6.0)
+        if use_band:
+            # 图例带：独占「标题之下、轴区之上」的一行，**顶边对齐带顶**并向下延伸。
+            # 不用"底边对齐带底"——框高估不准时会向下溢出到轴区顶部（又变成遮挡数据）。
+            y0 = float(self.cv.top0) + 4.0
             x0 = self.x0
         elif loc[0] == "t":
             y0 = self.y0 + 8
@@ -1672,8 +1972,8 @@ class Axes:
         y0 = max(4.0, min(y0, self.cv.H - box_h - 4.0))
         # 图例带内不得上侵标题：若框高超出带，向上夹紧只会撞标题，
         # 因此改为「顶边对齐带底」的方向下移（带已按行数预留足够高度）。
-        if self.cv._legend_band_bottom is not None:
-            y0 = max(float(self.cv.top0) + 2.0, y0)
+        if use_band:
+            y0 = float(self.cv.top0) + 4.0
 
         if boxed:
             self.d.rectangle([x0, y0, x0 + box_w, y0 + box_h],
@@ -1717,6 +2017,8 @@ class Axes:
         label = "、".join(str(it[2]) for it in items)[:48]
         self.cv.box(EL_LEGEND, x0, y0, x0 + box_w, y0 + box_h, "图例：%s" % label)
         self.cv.occupy((x0, y0, x0 + box_w, y0 + box_h))
+        if use_band:
+            self.cv._legend_band_used = True
         self._legend_items = []
 
     # -- 多面板辅助 ------------------------------------------------------
@@ -1747,13 +2049,55 @@ class Axes:
 # --------------------------------------------------------------------------
 
 def caption(cv: Canvas, x: float, y: float, s: str, color: str = C.PRIMARY,
-            bold: bool = True, fnt: int = FS_AXIS, anchor: str = "lt") -> None:
-    """图内小标题（如三联图的各面板标题）。"""
+            bold: bool = True, fnt: int = FS_AXIS, anchor: str = "lt",
+            bg: bool = False) -> None:
+    """图内小标题（如三联图的各面板标题）。
+
+    `bg=True` 时先铺一层白底：用于必须画在轴区内部（数据之上）的提示文字，
+    保证深色曲线/柱体之上依然清晰可读，而不是靠挪动文字去回避数据。
+    """
     f = font(fnt, bold)
     w, h = text_size(cv.d, s, f)
     xx = x - w / 2.0 if anchor[0] == "c" else (x - w if anchor[0] == "r" else x)
     yy = y if anchor[1] == "t" else (y - h / 2.0 if anchor[1] == "m" else y - h)
+    if bg:
+        cv.d.rectangle([xx - 5, yy - 3, xx + w + 5, yy + h + 3], fill=C.BG)
     cv.d.text((xx, yy), s, font=f, fill=color)
+
+
+def legend_strip(cv: Canvas, x: float, y: float, entries,
+                 fnt: int = FS_LABEL, gap: int = 26, sw: int = 40) -> float:
+    """在轴区**之外**画一条横排图例（图元 + 文字），返回其右端 x。
+
+    多子图图把图例放进轴内必然压柱体/曲线（FigT01 上下两图、FigT17 右上子图
+    都如此），放进「图例带」又要占掉一整行高度。`legend_strip` 把图例画在两行
+    子图之间的空隙或子图标题行里：**既不压数据，也不额外占大块高度**。
+
+    entries: `[(kind, color, text), ...]`，`kind` ∈ {line, dash, patch, marker}。
+    """
+    d = cv.d
+    f = font(fnt)
+    _, h = text_size(d, "汉", f)
+    cx = float(x)
+    yc = float(y) + h / 2.0
+    for kind, color, txt in entries:
+        if kind == "line":
+            d.line([(cx, yc), (cx + sw, yc)], fill=color, width=LW_CURVE)
+        elif kind == "dash":
+            sx = cx
+            while sx < cx + sw:
+                d.line([(sx, yc), (min(sx + 10, cx + sw), yc)], fill=color, width=LW_CURVE)
+                sx += 17
+        elif kind == "marker":
+            r = max(4, MARKER + 1)
+            d.ellipse([cx + sw / 2.0 - r, yc - r, cx + sw / 2.0 + r, yc + r], fill=color)
+        else:
+            d.rectangle([cx, yc - h / 2.0 + 3, cx + sw, yc + h / 2.0 - 3], fill=color)
+        cx += sw + 12
+        w, _ = text_size(d, str(txt), f)
+        d.text((cx, y), str(txt), font=f, fill=C.TEXT)
+        cx += w + gap
+    return cx - gap
 
 
 def arrow(draw: ImageDraw.ImageDraw, pts, color: str = C.PRIMARY, lw: int = LW_AUX,
@@ -1772,11 +2116,15 @@ def arrow(draw: ImageDraw.ImageDraw, pts, color: str = C.PRIMARY, lw: int = LW_A
 def node_box(cv: Canvas, x: float, y: float, w: float, h: float, title: str,
              lines: list[str], tag: str = "", fill: str = C.PRIMARY,
              fnt_title: int = FS_AXIS, fnt_body: int = FS_LABEL,
-             tag_fnt: int = FS_LABEL) -> None:
+             tag_fnt: int = FS_LABEL) -> int:
     """架构图节点：圆角框 + tag + 标题 + 若干行说明。
 
-    文字严格裁剪在卡片内（超宽时按字符截断并追加 `…`），保证不被卡片边框裁切、
-    也不会溢出到相邻卡片上。返回实际使用的正文行数。
+    文字**绝不截断成省略号**，也绝不溢出卡片：
+      ① 先按给定字号折行；
+      ② 行数超出卡片高度时逐级缩字号（下限 `FS_MIN`）；
+      ③ 缩到下限仍放不下时，如实打印告警并**整行**省略（不做半截路径），
+         由调用方（`fig_architecture.py`）负责精简文案或加高卡片。
+    返回实际使用的正文行数。
     """
     d = cv.d
     d.rounded_rectangle([x, y, x + w, y + h], radius=10,
@@ -1784,44 +2132,82 @@ def node_box(cv: Canvas, x: float, y: float, w: float, h: float, title: str,
     inner = w - 28.0
     ty = y + 10
     if tag:
-        d.rounded_rectangle([x + 12, ty, x + 12 + 52, ty + fnt_title + 4], radius=6, fill=fill)
-        draw_text_center(d, x + 12 + 26, ty + (fnt_title + 4) / 2.0, tag,
-                         font(min(tag_fnt, fnt_title), True), C.BG)
+        # 徽标按**实际文字宽度**定宽，避免白字溢出深色底（曾把 P0-1/OUT-1 等挤出框外）
+        ftag = font(min(tag_fnt, fnt_title), True)
+        tag_w = text_size(d, tag, ftag)[0] + 26
+        d.rounded_rectangle([x + 12, ty, x + 12 + tag_w, ty + fnt_title + 4], radius=6, fill=fill)
+        draw_text_center(d, x + 12 + tag_w / 2.0, ty + (fnt_title + 4) / 2.0, tag, ftag, C.BG)
         ty += fnt_title + 12
-    ft = font(fnt_title, True)
+
+    # 标题与正文共享纵向空间：先按正文算预算，再回填标题，避免"标题把正文挤没"。
+    gap = 6
+    body_top_gap = 2
+    ttl_lines, ttl_size = _fit_lines(d, [title], fnt_title, True, inner, 2, gap)
+    # 正文可用行数 = 卡片剩余高度 / 行距；标题占 `len(ttl_lines)` 行
+    line_h = fnt_body + gap
+    avail = int((y + h - 6) - (ty + len(ttl_lines) * (ttl_size + gap) + body_top_gap))
+    max_lines = max(1, avail // line_h)
+    body_lines, body_size = _fit_lines(d, list(lines), fnt_body, False, inner, max_lines, gap)
+    if len(body_lines) > max_lines:
+        print("[fig_style] 警告: 卡片正文放不下（需 %d 行，可用 %d 行，字号已降至 %d px）"
+              "—— 请精简文案或加高卡片: %s"
+              % (len(body_lines), max_lines, body_size, str(lines[:1])[:48]))
+
+    ft = font(ttl_size, True)
     drawn = 0
-    for ln in _clip_lines(d, title, ft, inner):
-        if ty + fnt_title > y + h - 6:
+    for ln in ttl_lines:
+        if ty + ttl_size > y + h - 6:
             break
         d.text((x + 14, ty), ln, font=ft, fill=C.TEXT)
-        ty += fnt_title + 6
+        ty += ttl_size + gap
         drawn += 1
-    fb = font(fnt_body)
-    for line in lines:
-        for ln in _clip_lines(d, line, fb, inner):
-            if ty + fnt_body > y + h - 6:
-                return drawn
-            d.text((x + 14, ty), ln, font=fb, fill=C.TEXT)
-            ty += fnt_body + 6
-            drawn += 1
+    fb = font(body_size)
+    ty += body_top_gap
+    for ln in body_lines[:max_lines]:
+        if ty + body_size > y + h - 6:
+            break
+        d.text((x + 14, ty), ln, font=fb, fill=C.TEXT)
+        ty += body_size + gap
+        drawn += 1
     return drawn
 
 
 def _clip_lines(draw: ImageDraw.ImageDraw, text: str, fnt, max_w: float) -> list[str]:
-    """把文本按 `max_w` 截断成单行（超宽时以 `…` 结尾）；空串返回空列表。"""
+    """把文本**折行**到 `max_w` 内，绝不截断成省略号；空串返回空列表。
+
+    这里曾是"零省略号"规则的漏洞（根因 B）：原实现超宽时逐字符砍掉再补 `…`，
+    于是 `Test_Audio/AudioSa…`、`patch_flags bit0=D1…` 这类**路径与参数**被切掉
+    尾部，语义不可恢复。改为折行后信息完整，代价是行数变多——调用方
+    （`node_box`）需按内容自动缩字号（下限 `FS_MIN`）或加高容器。
+    """
     s = str(text)
     if not s:
         return []
+    if max_w <= 4:
+        # 容器比一个字形还窄：交给调用方处理（缩字号/加宽），此处不制造省略号
+        return [s]
     if text_size(draw, s, fnt)[0] <= max_w:
         return [s]
-    while s:
-        s = s[:-1]
-        if not s:
-            return ["…"]
-        cand = s + "…"
-        if text_size(draw, cand, fnt)[0] <= max_w:
-            return [cand]
-    return ["…"]
+    return wrap_text(draw, s, fnt, max_w)
+
+
+def _fit_lines(draw: ImageDraw.ImageDraw, lines: list[str], size: int, bold: bool,
+               inner_w: float, max_lines: int, line_gap: int = 6) -> tuple[list[str], int]:
+    """把若干段文本折行塞进 `max_lines` 行内，返回 `(折行结果, 使用的字号)`。
+
+    降级顺序严格遵循计划书：① 缩字号（下限 `FS_MIN`，硬下限不得突破）
+    → ② 折行。全程不产生省略号；若缩到下限仍然超出，如实返回超出的行
+    （由调用方决定加高容器或精简文案），不静默截字。
+    """
+    size = max(FS_MIN, int(size))
+    while True:
+        f = font(size, bold)
+        out: list[str] = []
+        for ln in lines:
+            out.extend(wrap_text(draw, ln, f, inner_w) if ln else [""])
+        if len(out) <= max_lines or size <= FS_MIN:
+            return out, size
+        size -= 2
 
 
 def iter_frames(n: int, hop: int = 1, limit: int | None = None):

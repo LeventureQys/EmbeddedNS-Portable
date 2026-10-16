@@ -184,6 +184,14 @@ def _diff_snap(before: dict, after: dict) -> dict:
 
 
 def main() -> int:
+    # 控制台编码兜底：自测报告含 ✓/✗/× 等符号，在 GBK(936) 控制台下 `print`
+    # 会抛 UnicodeEncodeError 把自测直接打断（表现为"自测失败"而非"图件不合格"）。
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(errors="replace")
+        except (AttributeError, OSError, ValueError):
+            pass
+
     log: list[str] = []
     log.append(LINE)
     log.append("T4-I 自测报告  %s" % time.strftime("%Y-%m-%d %H:%M:%S"))

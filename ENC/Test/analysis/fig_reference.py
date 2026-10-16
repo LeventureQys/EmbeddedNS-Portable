@@ -83,21 +83,26 @@ def fig_t20() -> str:
         return ""
 
     cv = S.Canvas("full", "FigT20", "与 Project/ENC_Core 参照路径的形态对比（形态级，非逐点）")
-    rects = S.Axes.grid_rects((cv.pad_l, cv.top0 - 4, cv.W - cv.pad_r, cv.H - cv.bottom0 - 10),
-                              nrow=2, ncol=2, gap_x=140, gap_y=86)
+    # 版式重排：
+    #   ① 主图图例从「图例带」（会占掉 162 px 高度）改为轴区上方的横排图例条；
+    #   ② 两条曲线在本批数据上大面积重合，基线改虚线以便与绿线区分（数据本身不变）；
+    #   ③ 上下两组子图的 x 轴标题位置由 `panel()` 按各自轴底反推，主图标题落在主图
+    #      下方、分布图标题落在分布图下方——旧版只给最后一个子图传 xlabel，导致
+    #      其轴底未被收紧到刻度带之上，轴标题被画进了**自己绘图区内部**并压住柱体。
+    S.legend_strip(cv, cv.pad_l, cv.top0 - 26,
+                   [("dash", C.BASELINE, "baseline（24bit 量纲）"),
+                    ("line", C.POSITIVE, "reference（floatS16 量纲）")])
 
-    # ---- 主图：逐帧衰减轨迹（占上半两格 + 下半左格 => 用独立大面板重排）----
-    main_rect = (cv.pad_l, cv.top0 - 4, cv.W - cv.pad_r, cv.top0 + 300)
-    band = cv.set_legend_band(2)
-    main_rect = (main_rect[0], max(main_rect[1], band), main_rect[2], main_rect[3])
+    # ---- 主图：逐帧衰减轨迹 ----
+    main_rect = (cv.pad_l, cv.top0 + 20, cv.W - cv.pad_r, cv.top0 + 272)
     ax = cv.panel(rect=main_rect, ylabel="衰减量 (dB)", xlabel="帧序号（10 ms/帧）")
 
     series = []
     if base is not None:
         series.append(("主路径 baseline（24bit 量纲）", C.BASELINE, base[0], base[1]))
     series.append(("参照 reference（floatS16 量纲）", C.POSITIVE, ref[0], ref[1]))
-    for label, color, xs, ys in series:
-        ax.line(xs, ys, color=color, lw=3, label=label)
+    for i, (label, color, xs, ys) in enumerate(series):
+        ax.line(xs, ys, color=color, lw=3, label=label, dash=(i == 0))
         fin = ys[np.isfinite(ys)]
         if fin.size:
             print("  %-34s 帧=%d  中位 %.2f dB  均值 %.2f dB  P5 %.2f  P95 %.2f"
@@ -107,7 +112,6 @@ def fig_t20() -> str:
     ax.grid(horizontal=True, vertical=True)
     ax.axes_line()
     ax.frame()
-    ax.legend("tl")
 
     # ---- 副图：两条曲线的 atten_db 分布（同分箱直方图）----
     allv = np.concatenate([ys[np.isfinite(ys)] for _, _, _, ys in series])
@@ -117,7 +121,8 @@ def fig_t20() -> str:
     pad = (hi - lo) * 0.08
     bins = np.linspace(lo - pad, hi + pad, 25)
 
-    dist_rects = S.Axes.grid_rects((cv.pad_l, main_rect[3] + 96, cv.W - cv.pad_r,
+    dist_top = 492.0
+    dist_rects = S.Axes.grid_rects((cv.pad_l, dist_top, cv.W - cv.pad_r,
                                     cv.H - cv.bottom0),
                                    nrow=1, ncol=2, gap_x=150)
     panels = []
@@ -125,8 +130,12 @@ def fig_t20() -> str:
         panels.append(("主路径 baseline 分布", C.BASELINE, base[1]))
     panels.append(("参照 reference 分布", C.POSITIVE, ref[1]))
     for i, (title, color, vals) in enumerate(panels):
-        axs = cv.panel(rect=dist_rects[i], ylabel="帧数 (个)",
-                       xlabel="逐帧衰减量 (dB)" if i == len(panels) - 1 else "")
+        # 图题写在轴区**上方**（不占轴内空间，也不与曲线抢位置）
+        S.caption(cv, dist_rects[i][0], dist_top - 34, title, color=color, fnt=S.FS_LABEL)
+        # 横轴语义：本子图的 x 轴是衰减量数值轴、y 轴才是帧数（旧版两子图用了完全
+        # 相同的标题、且 x 标题还压进了柱体，无法区分）。
+        axs = cv.panel(rect=dist_rects[i], ylabel="帧数 (个)" if i == 0 else "",
+                       xlabel="逐帧衰减量 (dB)")
         axs.set_xlim(bins[0], bins[-1])
         _hist_overlay(axs, [(title, color, vals, True)], bins, "帧数 (个)", "")
         axs.autoscale()
@@ -134,11 +143,13 @@ def fig_t20() -> str:
         axs.grid(horizontal=True, vertical=False)
         axs.axes_line()
         axs.frame()
-        axs.legend("tr", max_w=axs.width * 0.8)
         fin = vals[np.isfinite(vals)]
         if fin.size:
-            axs.vline(float(np.median(fin)), color=C.WARN, lw=2, dash=False,
-                      label="中位 %.2f dB" % float(np.median(fin)))
+            med = float(np.median(fin))
+            axs.vline(med, color=C.WARN, lw=2, dash=False)
+            # 橙线必须有标注：写在轴区右上角并加白底，避免被柱体/曲线穿过
+            S.caption(cv, axs.x1 - 12, axs.y0 + 8, "中位 %.2f dB" % med,
+                      color=C.WARN, fnt=S.FS_LABEL, anchor="rt", bg=True)
 
     info = K.read_build_info(REF)
     if info:

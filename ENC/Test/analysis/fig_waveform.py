@@ -66,23 +66,22 @@ def fig_t03(data: dict, rate: int) -> str:
         return ""
 
     n = max(int(data[t[1]].size) for t in TRACKS)
+    # 标题承载完整说明（三行内容、满量程、声道），使图内不必再放底部注释
     cv = S.Canvas("strip", "FigT03",
-                  "波形对比（1.wav 全段）：原始 / 基线 / 优化（三行共用 ±32768 满量程）")
+                  "波形对比（1.wav 全段，原始=左声道；三行共用 ±32768 满量程）")
 
-    # 垂直布局（条带画布 1800×445，高度紧张，故不设底部注释行——说明并入标题）：
-    #   标题带 0–60；三条轨道自 y=72 起，每条 = 24 px 名称 + 64 px 轴，行距 96；
-    #   第三条轴底 = 352，x 轴标题居中于 y≈398，画布底部保留 ≥8 px 白边。
-    top = 68.0
-    label_h = 24
-    ax_h = 62
-    row_pitch = label_h + ax_h + 12
+    # 垂直预算（条带画布仅 445 px，三行波形必须"重新分配空间"而不是就地挤）：
+    #   · 不设底部注释 → 把注释预留从 106 px 收到 24 px；
+    #   · x 轴三行共享（时间列相同）→ 只有最后一行画刻度标签与轴标题，
+    #     前两行省下的刻度带高度全部还给波形轴区，信息零损失；
+    #   · 行名用**竖排 y 轴标题**（2 字，56 px）承载，不再单独占一行标题高度。
+    cv.set_bottom_reserve(24)
+    rows = cv.stack_rows(3, top=cv.top0 - 6, bottom=cv.H - 116, gap=14, caption_h=0.0)
 
     for i, (label, key, color) in enumerate(TRACKS):
-        y0 = top + i * row_pitch
-        S.caption(cv, cv.pad_l, y0, label, color=color, fnt=S.FS_LABEL)
-        ax_top = y0 + label_h
-        ax = cv.panel(rect=(cv.pad_l, ax_top, cv.W - cv.pad_r, ax_top + ax_h),
-                      ylabel="幅度" if i == 1 else "",
+        rect, _cap = rows[i]
+        short = label.split()[0].split("（")[0]
+        ax = cv.panel(rect=rect, ylabel=short,
                       xlabel="时间 (s)" if i == 2 else "")
         samples = np.asarray(data[key], dtype=np.float64)
         n_cols = max(2, int(ax.width))
@@ -92,7 +91,7 @@ def fig_t03(data: dict, rate: int) -> str:
         ax.set_ylim(-32768, 32767)
         ax.set_xlim(0, samples.size / float(rate))
         ax.autoscale()
-        ax.grid(horizontal=True, vertical=True)
+        ax.grid(horizontal=True, vertical=True, xtick_labels=(i == 2))
         ax.axes_line()
         ax.frame()
         print("  %-16s 样本=%d  峰值=%d  RMS=%.1f" %
@@ -126,7 +125,7 @@ def fig_t04(data: dict, rate: int, t_start: float = 5.0, span: float = 0.5) -> s
     i0, i1 = int(t_start * rate), int(t_end * rate)
 
     cv = S.Canvas("half", "FigT04", "波形对比（放大 %.2f–%.2f s）" % (t_start, t_end))
-    band = cv.set_legend_band(2)
+    band = cv.set_legend_band(3)
     ax = cv.panel(rect=(cv.pad_l, max(cv.top0, band), cv.W - cv.pad_r, cv.H - cv.bottom0),
                   ylabel="幅度", xlabel="时间 (s)")
     ax.set_ylim(-32768, 32767)

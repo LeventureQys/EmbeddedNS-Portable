@@ -86,7 +86,7 @@
     "rasterEngine": "libreoffice",
     "source": "saved",
     "inputPath": "D:\\workshop\\Github\\EmbeddedNS-Portable\\ENC\\Document\\NS组件化与对比测试报告.pptx",
-    "sourceSha256": "879e41ec899b057c3081b12634a215825c1ab7b842f1ffa0817e27b80940d5eb",
+    "sourceSha256": "ead10e99acb7e1e3dcc7ab2671f9a793736a66a6103a8b2607cd1d5f0f68accb",
     "dpi": 144,
     "pageCount": 34,
     "missingFonts": []
@@ -94,7 +94,7 @@
   "png_count": 34,
   "pdf": {
     "path": "D:\\workshop\\Github\\EmbeddedNS-Portable\\ENC\\Document\\preview\\NS报告.pdf",
-    "bytes": 3182376
+    "bytes": 2529645
   },
   "edge_check": [
     {
@@ -405,8 +405,10 @@
     }
   ],
   "visual_check": {
-    "status": "pending",
-    "expected_path": "D:\\workshop\\Github\\EmbeddedNS-Portable\\ENC\\Test\\analysis\\_reports\\visual_check.json"
+    "status": "pass",
+    "pages_checked": 34,
+    "problems": [],
+    "notes": "34 页逐页视觉检查完成。通道：视觉模型 deepseek-v4-flash-vision-exp（经 workflow 的 provider/model 覆盖调用，4 批并行）。首轮结果：12 页 OK / 18 页轻微 / 4 页问题。4 个问题页均已修复并经像素级复核 + 第二轮定点复检确认为 OK：(1) p19 DNS-MOS 逐文件明细——原生柱状图 27 根柱的数据标签互相压印，已去除柱顶标签（数值在 p33 数据表中完整呈现）；(2) p20 四项修复的分层效果——表格第 4 行与柱状图绘图区重叠 0.400 in，已调整表行高与图表位置，实测间隙 0.150 in 且该区间渲染墨迹 0 行；(3) p23 信号层面——副标题折行第二行压住图块标题，副标题已压至 21 字并下移图区，实测单行且留 0.250 in 空隙；(4) p24 与另一条路径互证——副标题被截断于句中断，已重写为 59 字，实测墨迹右端距边界尚有 3.207 in。18 页「轻微」项均为间距偏紧、字号略小或换行拆词，不影响可读性与数据判读，不作为问题记录。检查覆盖：文字溢出幻灯片边界、元素相互遮挡、字号投影可读性、中文渲染（无方块/乱码/缺字）、图片与表格与图表的变形/越界/内容裁切、图表内元素重叠（轴标题压刻度、图例压数据、注释压坐标轴）、行距与信息密度。局限：本次为视觉模型的自动版式检查，最终版式仍以用户审阅 ENC/Document/preview/ 后的确认为准。"
   },
   "problems": []
 }

@@ -50,11 +50,17 @@ EXPECTED = {
                        "FigT19_单帧耗时分布.png", "FigT21_无语音段与语音段衰减.png",
                        "FigT22_失败与边界案例.png"),
     "fig_reference.py": ("FigT20_参照形态对比.png",),
+    "fig_dnsmos.py": ("FigT23_DNSMOS语音质量对比.png",),
     "fig_architecture.py": ("FigT02_组件架构与数据流.png",),
 }
 
 #: 允许"数据缺失时跳过"的脚本 → 缺失不算失败
-OPTIONAL_IF_MISSING = {"fig_reference.py", "fig_waveform.py", "fig_spectrogram.py"}
+#: （`fig_dnsmos.py` 依赖 `<DATA_DIR>/dnsmos/*.csv`，合成自测数据里没有该目录，
+#:   会打印 SKIP 且不产出 PNG；不列入本集合会让自测在"缺图"上报假失败。）
+#: 注意：这里**只定义一次**——此前文件里重复定义过两次、后者覆盖前者，
+#: 把 `fig_dnsmos.py` 静默挤出白名单，正是自测报 `退出码 0 但缺少产物` 的原因。
+OPTIONAL_IF_MISSING = {"fig_reference.py", "fig_waveform.py", "fig_spectrogram.py",
+                       "fig_dnsmos.py"}
 
 #: 脚本 → 其产出的图件编号（用于 `--only` 过滤；按图号而非文件名匹配）
 SCRIPT_FIGS = {
@@ -63,6 +69,7 @@ SCRIPT_FIGS = {
     "fig_trace.py": ("07", "09", "10", "11", "12", "16"),
     "fig_summary.py": ("01", "08", "13", "15", "17", "18", "19", "21", "22"),
     "fig_reference.py": ("20",),
+    "fig_dnsmos.py": ("23",),
     "fig_architecture.py": ("02",),
 }
 
@@ -123,6 +130,16 @@ def check_artifacts(script: str, fdir: str, only: set[str] | None = None) -> tup
 
 
 def main(argv: list[str]) -> int:
+    # 控制台编码兜底：图件脚本的输出含 `−`(U+2212)、`·`、`×` 等字符，在 GBK(936)
+    # 控制台下 `print` 会抛 UnicodeEncodeError 直接打断流水线（表现为"退出码 1"的
+    # **假失败**，与图件质量无关）。这里只放宽错误处理策略，不改编码本身：
+    # 无法编码的字符降级为 `?`，中文仍按控制台原编码正常显示。
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(errors="replace")
+        except (AttributeError, OSError, ValueError):
+            pass
+
     ap = argparse.ArgumentParser(description="EmbeddedNS 测试报告出图与 PPT 生成流水线")
     ap.add_argument("--skip-deck", action="store_true", help="跳过 build_deck.py / check_deck.py")
     ap.add_argument("--skip-check", action="store_true", help="只跳过 check_deck.py")

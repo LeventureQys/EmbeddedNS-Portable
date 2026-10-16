@@ -4,7 +4,7 @@
   "rasterEngine": "libreoffice",
   "source": "saved",
   "inputPath": "D:\\workshop\\Github\\EmbeddedNS-Portable\\ENC\\Document\\NS组件化与对比测试报告.pptx",
-  "sourceSha256": "879e41ec899b057c3081b12634a215825c1ab7b842f1ffa0817e27b80940d5eb",
+  "sourceSha256": "ead10e99acb7e1e3dcc7ab2671f9a793736a66a6103a8b2607cd1d5f0f68accb",
   "dpi": 144,
   "pageCount": 34,
   "images": [
@@ -20,7 +20,7 @@
         "width": 1280,
         "height": 720.0666666666667
       },
-      "byteLength": 374622
+      "byteLength": 322067
     },
     {
       "index": 2,
@@ -34,7 +34,7 @@
         "width": 1280,
         "height": 720.0666666666667
       },
-      "byteLength": 224720
+      "byteLength": 204331
     },
     {
       "index": 3,
@@ -48,7 +48,7 @@
         "width": 1280,
         "height": 720.0666666666667
       },
-      "byteLength": 235982
+      "byteLength": 196889
     },
     {
       "index": 4,
@@ -62,7 +62,7 @@
         "width": 1280,
         "height": 720.0666666666667
       },
-      "byteLength": 253577
+      "byteLength": 412903
     },
     {
       "index": 5,
@@ -76,7 +76,7 @@
         "width": 1280,
         "height": 720.0666666666667
       },
-      "byteLength": 406290
+      "byteLength": 203842
     },
     {
       "index": 6,
@@ -90,7 +90,7 @@
         "width": 1280,
         "height": 720.0666666666667
       },
-      "byteLength": 194677
+      "byteLength": 233680
     },
     {
       "index": 7,
@@ -104,7 +104,7 @@
         "width": 1280,
         "height": 720.0666666666667
       },
-      "byteLength": 160345
+      "byteLength": 342525
     },
     {
       "index": 8,
@@ -118,7 +118,7 @@
         "width": 1280,
         "height": 720.0666666666667
       },
-      "byteLength": 130105
+      "byteLength": 197721
     },
     {
       "index": 9,
@@ -132,7 +132,7 @@
         "width": 1280,
         "height": 720.0666666666667
       },
-      "byteLength": 124792
+      "byteLength": 214442
     },
     {
       "index": 10,
@@ -146,7 +146,7 @@
         "width": 1280,
         "height": 720.0666666666667
       },
-      "byteLength": 160312
+      "byteLength": 124531
     },
     {
       "index": 11,
@@ -160,7 +160,7 @@
         "width": 1280,
         "height": 720.0666666666667
       },
-      "byteLength": 208195
+      "byteLength": 149468
     },
     {
       "index": 12,
@@ -174,7 +174,7 @@
         "width": 1280,
         "height": 720.0666666666667
       },
-      "byteLength": 149735
+      "byteLength": 166157
     },
     {
       "index": 13,
@@ -188,7 +188,7 @@
         "width": 1280,
         "height": 720.0666666666667
       },
-      "byteLength": 273885
+      "byteLength": 173295
     },
     {
       "index": 14,
@@ -202,7 +202,7 @@
         "width": 1280,
         "height": 720.0666666666667
       },
-      "byteLength": 126525
+      "byteLength": 216452
     },
     {
       "index": 15,
@@ -216,7 +216,7 @@
         "width": 1280,
         "height": 720.0666666666667
       },
-      "byteLength": 275463
+      "byteLength": 204724
     },
     {
       "index": 16,
@@ -230,7 +230,7 @@
         "width": 1280,
         "height": 720.0666666666667
       },
-      "byteLength": 1629906
+      "byteLength": 185988
     },
     {
       "index": 17,
@@ -244,7 +244,7 @@
         "width": 1280,
         "height": 720.0666666666667
       },
-      "byteLength": 223752
+      "byteLength": 209916
     },
     {
       "index": 18,
@@ -258,7 +258,7 @@
         "width": 1280,
         "height": 720.0666666666667
       },
-      "byteLength": 153231
+      "byteLength": 185901
     },
     {
       "index": 19,
@@ -272,7 +272,7 @@
         "width": 1280,
         "height": 720.0666666666667
       },
-      "byteLength": 115959
+      "byteLength": 136394
     },
     {
       "index": 20,
@@ -286,7 +286,7 @@
         "width": 1280,
         "height": 720.0666666666667
       },
-      "byteLength": 1627372
+      "byteLength": 146786
     },
     {
       "index": 21,
@@ -300,7 +300,7 @@
         "width": 1280,
         "height": 720.0666666666667
       },
-      "byteLength": 1848738
+      "byteLength": 301015
     },
     {
       "index": 22,
@@ -314,7 +314,7 @@
         "width": 1280,
         "height": 720.0666666666667
       },
-      "byteLength": 319947
+      "byteLength": 360016
     },
     {
       "index": 23,
@@ -328,7 +328,7 @@
         "width": 1280,
         "height": 720.0666666666667
       },
-      "byteLength": 363917
+      "byteLength": 854835
     },
     {
       "index": 24,
@@ -342,7 +342,7 @@
         "width": 1280,
         "height": 720.0666666666667
       },
-      "byteLength": 264764
+      "byteLength": 317525
     },
     {
       "index": 25,
@@ -356,7 +356,7 @@
         "width": 1280,
         "height": 720.0666666666667
       },
-      "byteLength": 176923
+      "byteLength": 205890
     },
     {
       "index": 26,
@@ -370,7 +370,7 @@
         "width": 1280,
         "height": 720.0666666666667
       },
-      "byteLength": 277279
+      "byteLength": 153655
     },
     {
       "index": 27,
@@ -384,7 +384,7 @@
         "width": 1280,
         "height": 720.0666666666667
       },
-      "byteLength": 206839
+      "byteLength": 197022
     },
     {
       "index": 28,
@@ -398,7 +398,7 @@
         "width": 1280,
         "height": 720.0666666666667
       },
-      "byteLength": 242543
+      "byteLength": 347049
     },
     {
       "index": 29,
@@ -412,7 +412,7 @@
         "width": 1280,
         "height": 720.0666666666667
       },
-      "byteLength": 219140
+      "byteLength": 170735
     },
     {
       "index": 30,
@@ -426,7 +426,7 @@
         "width": 1280,
         "height": 720.0666666666667
       },
-      "byteLength": 182623
+      "byteLength": 163412
     },
     {
       "index": 31,
@@ -440,7 +440,7 @@
         "width": 1280,
         "height": 720.0666666666667
       },
-      "byteLength": 229339
+      "byteLength": 136644
     },
     {
       "index": 32,
@@ -454,7 +454,7 @@
         "width": 1280,
         "height": 720.0666666666667
       },
-      "byteLength": 189980
+      "byteLength": 212553
     },
     {
       "index": 33,
@@ -468,7 +468,7 @@
         "width": 1280,
         "height": 720.0666666666667
       },
-      "byteLength": 156837
+      "byteLength": 137077
     },
     {
       "index": 34,
@@ -482,7 +482,7 @@
         "width": 1280,
         "height": 720.0666666666667
       },
-      "byteLength": 299462
+      "byteLength": 314764
     }
   ],
   "missingFonts": []

@@ -98,6 +98,11 @@ def trace_figure(fig_id: str, title: str, column: str, filename: str,
 
     `mark_nan=True` 时把该列的 NaN/Inf 帧画成醒目竖带并在图例中注明
     （D8 缺陷下 `speech_prob_mean` 会出现 NaN 字面量；不做静默丢点）。
+
+    空间分配（条带画布只有 445 px 高，必须显式重排而非就地挤）：
+    图例横排在标题与轴区之间的空档，**不再使用会吃掉 162 px 的「图例带」**——
+    那条带曾把轴区压到 95 px，使 5 个对数刻度值（1e+14…1e+10）互相叠印、
+    竖排轴标题也放不下而退化成压数据的横排贴字。
     """
     metrics = load_metrics()
     pairs = _both(metrics)
@@ -105,18 +110,25 @@ def trace_figure(fig_id: str, title: str, column: str, filename: str,
         print("SKIP %s 无可用 metrics 数据（%s）" % (fig_id, K.metrics_path(K.PRIMARY_VARIANT, LEVEL, NAME)))
         return ""
     cv = S.Canvas("strip", fig_id, title)
-    band = cv.set_legend_band(2)
-    ax = cv.panel(rect=(cv.pad_l, max(cv.top0, band), cv.W - cv.pad_r, cv.H - cv.bottom0),
+    # 图例：基线与优化的曲线在本批数据上大量重合，用「实线 / 虚线」区分，
+    # 避免其中一条被完全盖住而让图例与所见不符。
+    entries = []
+    for i, (v, _m) in enumerate(pairs):
+        entries.append(("dash" if i == 0 else "line", _style_of(v), _label_of(v)))
+    S.legend_strip(cv, cv.pad_l, cv.top0 - 20, entries)
+    cv.set_bottom_reserve(64)
+    ax = cv.panel(rect=(cv.pad_l, cv.top0 + 26, cv.W - cv.pad_r, cv.H - cv.bottom0 - 34),
                   ylabel=ylabel, xlabel=xlabel, ylog=logy)
 
     nan_info = []
-    for variant, m in pairs:
+    for i, (variant, m) in enumerate(pairs):
         key = "_atten_valid" if use_valid_atten else column
         y = np.asarray(m[key], dtype=np.float64)
         x = np.asarray(m["frame_idx"], dtype=np.float64)
         if logy:
             y = np.where(y > 0, y, np.nan)
-        ax.line(x, y, color=_style_of(variant), lw=3, label=_label_of(variant))
+        ax.line(x, y, color=_style_of(variant), lw=3, label=_label_of(variant),
+                dash=(i == 0))
         finite = y[np.isfinite(y)]
         n_nan = int(np.sum(np.isnan(y)))
         if finite.size:
@@ -136,9 +148,10 @@ def trace_figure(fig_id: str, title: str, column: str, filename: str,
     ax.grid()
     ax.axes_line()
     ax.frame()
-    ax.legend("tl", max_w=None)
     note = extra_note or ("纵轴：%s；横轴：帧序号（10 ms/帧，480 样本）。" % ylabel)
-    if nan_info:
+    # 只有当调用方**尚未**说明 NaN 处理时，才追加这段补充；否则同一件事会说两遍，
+    # 把注释撑成两行、在 445 px 高的条带图里被整段丢弃（FigT10 曾如此）。
+    if nan_info and "NaN" not in note:
         note += "  NaN/Inf 帧已用竖带标出（%s），非缺失数据，不作零值替换。" % \
             "、".join("%s %d/%d" % (K.VARIANT_LABEL.get(v, v), n, t) for v, n, t in nan_info)
     cv.note(note)
@@ -156,15 +169,24 @@ def fig_t16() -> str:
         print("SKIP FigT16 无可用 metrics 数据")
         return ""
     cv = S.Canvas("strip", "FigT16", "启动期放大（前 %d 帧 / 2.0 s）" % STARTUP_FRAMES)
-    rects = S.Axes.grid_rects((cv.pad_l, cv.top0 + 66, cv.W - cv.pad_r, cv.H - cv.bottom0),
-                              nrow=1, ncol=3, gap_x=52)
+    # 三面板各画一个图例时，图例框（约 260×90 px）会遮断 442 px 宽面板里的曲线中段
+    # （实测三个面板全部被遮断）。改为在标题与轴区之间的空档放**一条共用图例**，
+    # 三个面板的图例项完全同构（基线/优化），共用不丢任何信息。
+    S.legend_strip(cv, cv.pad_l, cv.top0 - 20,
+                   [("dash", _style_of(K.PRIMARY_VARIANT), _label_of(K.PRIMARY_VARIANT)),
+                    ("line", _style_of(K.COMPARE_VARIANT), _label_of(K.COMPARE_VARIANT))])
+    cv.set_bottom_reserve(64)
+    # 列间距必须容得下第二列**竖排 y 轴标题**的横向宽度（刻度字宽 + 间隙 + 标题宽
+    # ≈ 116 px）。原 gap_x=52 时第二列的「语音概率」被画进第一列绘图区，与曲线交叠。
+    rects = S.Axes.grid_rects((cv.pad_l, cv.top0 + 26, cv.W - cv.pad_r, cv.H - cv.bottom0 - 34),
+                              nrow=1, ncol=3, gap_x=126)
 
     ax1 = cv.panel(rect=rects[0], ylabel="衰减量", xlabel="帧序号（10 ms/帧）")
     ax1.set_xlim(-2, STARTUP_FRAMES + 2)
     for variant, m in pairs:
         n = min(STARTUP_FRAMES, m["_atten_valid"].size)
         ax1.line(m["frame_idx"][:n], m["_atten_valid"][:n],
-                 color=_style_of(variant), lw=3, label=_label_of(variant))
+                 color=_style_of(variant), lw=3, dash=(variant == K.PRIMARY_VARIANT))
         seg = m["_atten_valid"][:n]
         fin = seg[np.isfinite(seg)]
         print("  %-10s 前 %d 帧 atten: 均值 %.3f dB  最大 %.3f dB" %
@@ -174,11 +196,10 @@ def fig_t16() -> str:
     ax1.grid()
     ax1.axes_line()
     ax1.frame()
-    ax1.legend("tc", max_w=ax1.width * 0.92)
 
     ax2 = cv.panel(rect=rects[1], ylabel="语音概率", xlabel="帧序号（10 ms/帧）")
     ax2.set_xlim(-2, STARTUP_FRAMES + 2)
-    # 右面板只画 speech_prob_mean（0–1）。
+    # 中面板只画 speech_prob_mean（0–1）。
     # 注意：`diff_normalization` 实测量级为 1e10~1e13（非 0–1），与概率量跨 14 个数量级，
     # 同轴线性混画会把概率曲线压成贴地直线。故拆到下方第 3 面板（对数量纲），不混画。
     drawn = False
@@ -187,7 +208,7 @@ def fig_t16() -> str:
         if n == 0:
             continue
         ax2.line(m["frame_idx"][:n], m["speech_prob_mean"][:n],
-                 color=_style_of(variant), lw=3, label=_label_of(variant))
+                 color=_style_of(variant), lw=3, dash=(variant == K.PRIMARY_VARIANT))
         drawn = True
     if not drawn:
         print("SKIP FigT16 中面板无数据")
@@ -196,7 +217,6 @@ def fig_t16() -> str:
     ax2.grid()
     ax2.axes_line()
     ax2.frame()
-    ax2.legend("tc", max_w=ax2.width * 0.92)
 
     # ---- 第三面板：diff_normalization（对数量纲独立成图）----
     ax3 = cv.panel(rect=rects[2], ylabel="log10(D)", xlabel="帧序号（10 ms/帧）",
@@ -209,12 +229,11 @@ def fig_t16() -> str:
         dn = np.asarray(m["diff_normalization"][:n], dtype=np.float64)
         dn = np.where(np.isfinite(dn) & (dn > 0), np.log10(np.maximum(dn, 1e-300)), np.nan)
         ax3.line(m["frame_idx"][:n], dn, color=_style_of(variant), lw=3,
-                 label="%s · log10(D)" % ("基线" if variant==K.PRIMARY_VARIANT else "优化"))
+                 dash=(variant == K.PRIMARY_VARIANT))
     ax3.autoscale()
     ax3.grid()
     ax3.axes_line()
     ax3.frame()
-    ax3.legend("tc", max_w=ax3.width * 0.92)
 
     for variant, m in pairs:
         n = min(STARTUP_FRAMES, m["speech_prob_mean"].size)
@@ -227,8 +246,8 @@ def fig_t16() -> str:
                _rng(np.log10(np.where(dn > 0, dn, np.nan)), np.nanmin),
                _rng(np.log10(np.where(dn > 0, dn, np.nan)), np.nanmax)))
 
-    cv.note("三面板同帧轴：上=衰减量(dB)，中=speech_prob_mean(0–1)，下=log10(diff_normalization)。"
-            "diff_normalization 量级 1e10–1e13，已独立成图（对数纵轴），不与 0–1 概率量混画。启动期=前 200 帧。")
+    cv.note("三面板同帧轴（前 200 帧）：衰减量 / 语音概率 / log10(diff_normalization)；"
+            "后者量级 1e10–1e13，独立成图不与 0–1 量混画。")
     return cv.save("FigT16_启动期放大.png")
 
 
@@ -242,14 +261,13 @@ def main() -> int:
                  "FigT07_signal_energy轨迹.png", "信号能量", logy=True)
     trace_figure("FigT09", "diff_normalization 轨迹对比（对数纵轴）", "diff_normalization",
                  "FigT09_diff_normalization轨迹.png", "diff_norm", logy=True,
-                 extra_note="纵轴：diff_normalization（对数量纲，实测 1e10–1e13，故用对数刻度）；"
-                            "横轴：帧序号（10 ms/帧）。非正值/NaN 帧自动断线，不做零值替换。")
+                 extra_note="纵轴 diff_normalization（对数量纲 1e10–1e13，故取对数）；"
+                            "非正值/NaN 帧自动断线，不作零值替换。")
     trace_figure("FigT10", "speech_prob_mean 轨迹对比（NaN 帧已标出）", "speech_prob_mean",
                  "FigT10_speech_prob_mean轨迹.png", "语音概率均值",
                  mark_nan=True,
-                 extra_note="纵轴：speech_prob_mean（0–1）；横轴：帧序号（10 ms/帧）。"
-                            "含 NaN/Inf 的帧以竖带显式标出（D8 缺陷：fastpow2 定义域外返回 NaN），"
-                            "不做零值替换、不静默丢点。")
+                 extra_note="纵轴 speech_prob_mean（0–1）；NaN/Inf 帧以竖带标出"
+                            "（D8 缺陷），不替换零值。")
     trace_figure("FigT11", "gain_adjustment 轨迹对比", "gain_adjustment",
                  "FigT11_gain_adjustment轨迹.png", "增益调整量")
     trace_figure("FigT12", "逐帧 atten_db 轨迹对比", "atten_db",

@@ -103,32 +103,7 @@ COLOR_WHITE = "ffffff"
 TOTAL_PAGES = 34
 SEP = "　·　"
 
-# 章节导览（第 3 页）
-CHAPTERS = [
-    ("第 1 章 结论", "1–4", "一句话答案与三项核心结论"),
-    ("第 2 章 被测对象", "5–9", "摘取范围、三个开关、量纲、数据规模、构建指纹"),
-    ("第 3 章 测试方法", "10–12", "逐帧处理链路、12 类指标、一键复现命令"),
-    ("第 4 章 基线结果", "13–17", "改动前的整体表现与启动期异常特征"),
-    ("第 5 章 优化结果", "18–23", "优化后的改善量与差异集中位置"),
-    ("第 6 章 消融分析", "24–27", "四项修复（D1/D5/D6/D8）各自的贡献与 NaN 归因"),
-    ("第 7 章 交叉验证与讨论", "28–31", "参照路径互证、审查结论逐条验证、性能"),
-    ("第 8 章 结论与附录", "32–34", "结论建议、图件索引、检查方法与限制"),
-]
 
-METRIC_TABLE = [
-    ("frame_idx", "int", "帧序号，从 0 开始", "时域"),
-    ("in_rms", "float", "本帧输入 RMS（24bit 量纲）", "时域"),
-    ("out_rms", "float", "本帧输出 RMS（24bit 量纲）", "时域"),
-    ("atten_db", "float", "20·log10(in_rms / out_rms)；out_rms=0 记为 999.0", "时域"),
-    ("signal_energy", "float", "频域能量累加量（D1 污染点，见第 15 页）", "频域"),
-    ("signal_spectral_sum", "float", "信号谱幅度总和", "频域"),
-    ("diff_normalization", "float", "谱差特征归一化量（D1 传导链第二级）", "诊断"),
-    ("speech_prob_mean", "float", "帧内语音概率均值；D8 唯一被 NaN 污染的列（第 25 页）", "诊断"),
-    ("prior_speech_prob", "float", "先验语音概率", "诊断"),
-    ("gain_adjustment", "float", "维纳增益调节量（第四级）", "诊断"),
-    ("clamp_hits", "int", "本帧触达钳位边界的样本数（D5 相关）", "诊断"),
-    ("elapsed_us", "int", "本帧 NS_Process48k 耗时（微秒）", "性能"),
-]
 
 
 def _pct(value, digits=1):
@@ -269,8 +244,12 @@ def add_table(slide, headers, rows, left=TABLE_POS[0], top=TABLE_POS[1],
 
 
 def add_bar_chart(slide, categories, series, left, top, width, height,
-                  number_format="0.00", legend=True, title=None):
-    """原生柱状图（数据内嵌，与源 CSV 一致）。"""
+                  number_format="0.00", legend=True, title=None, data_labels=True):
+    """原生柱状图（数据内嵌，与源 CSV 一致）。
+
+    ``data_labels=False`` 用于柱体过密的场景（例如 9 文件 × 3 系列 = 27 根柱），
+    此时柱宽小于标签宽度、柱顶标签会互相压印 —— 数值仍可在表格页逐项核对。
+    """
     data = CategoryChartData()
     data.categories = list(categories)
     for name, values in series:
@@ -293,7 +272,7 @@ def add_bar_chart(slide, categories, series, left, top, width, height,
     chart.font.color.rgb = RGBColor.from_string(COLOR_INK)
     try:
         plot = chart.plots[0]
-        plot.has_data_labels = True
+        plot.has_data_labels = bool(data_labels)
         plot.data_labels.number_format = number_format
         plot.data_labels.number_format_is_linked = False
         plot.data_labels.font.size = Pt(10)
@@ -483,217 +462,273 @@ def _data_note(dataset: Dataset, level):
 
 
 # ------------------------------------------------------------------ 页面实现
+
+def _short(text, limit=22):
+    """附录表格用的短描述（超出长度加省略号）。"""
+    text = str(text)
+    return text if len(text) <= limit else text[: limit - 1] + "…"
+
+# 章节导览（第 6 页）。本定义覆盖文件前部的旧结构定义（旧 8 章结构已废弃）。
+CHAPTERS = [
+    ("第 1 章 结论先行", "1–6", "一句话答案、三项核心结论、DNS-MOS 总览、问题所在、定位与边界"),
+    ("第 2 章 被测对象与评价方法", "7–11", "组件摘取与架构、量纲与测试数据、评价方法、构建可复现、一键复现"),
+    ("第 3 章 发现的问题", "12–18", "缺陷判定矩阵、D8 根因与影响范围、零效果修复、基线低于不处理、未覆盖项"),
+    ("第 4 章 修复与效果", "19–25", "DNS-MOS 逐文件明细、分层效果、消融五组、诊断量轨迹、信号层、互证、性能"),
+    ("第 5 章 结论与附录", "26–34", "结论与建议、修复优先级、限制与假设、图件与数据索引、检查方法"),
+]
+
+METRIC_TABLE = [
+    ("frame_idx", "int", "帧序号，从 0 开始", "时域"),
+    ("in_rms", "float", "本帧输入 RMS（24bit 量纲）", "时域"),
+    ("out_rms", "float", "本帧输出 RMS（24bit 量纲）", "时域"),
+    ("atten_db", "float", "20·log10(in_rms / out_rms)；out_rms=0 记为 999.0", "时域"),
+    ("signal_energy", "float", "频域能量累加量（D1 的写入点；D8 会使其上游失真）", "频域"),
+    ("signal_spectral_sum", "float", "信号谱幅度总和", "频域"),
+    ("diff_normalization", "float", "谱差特征归一化量（传导链第二级）", "诊断"),
+    ("speech_prob_mean", "float", "帧内语音概率均值；D8 唯一被 NaN 污染的列（第 13 / 14 页）", "诊断"),
+    ("prior_speech_prob", "float", "先验语音概率", "诊断"),
+    ("gain_adjustment", "float", "维纳增益调节量（传导链第四级）", "诊断"),
+    ("clamp_hits", "int", "本帧触达钳位边界的样本数；实测全变体为 0（第 15 页）", "诊断"),
+    ("elapsed_us", "int", "本帧 NS_Process48k 耗时（微秒）", "性能"),
+]
+
+
+def _ovrl(deck: Deck, variant):
+    """DNS-MOS 汇总里的 OVRL（缺失返回 None）。"""
+    return (deck.dataset.dnsmos(variant) or {}).get("OVRL")
+
+
+def _dnsmos_cell(deck: Deck, variant, key):
+    return (deck.dataset.dnsmos(variant) or {}).get(key)
+
+
+def _dns_categories_and_values(deck: Deck, key="OVRL", variants=None):
+    """DNS-MOS 原生图表用：分类（中文标签）与数值序列。"""
+    variants = variants or DD.DNSMOS_VARIANTS
+    labels = [DD.DNSMOS_LABELS.get(v, v) for v in variants]
+    values = [_chart_cell(_dnsmos_cell(deck, v, key)) for v in variants]
+    return labels, values
+
+
 def p01_cover(deck: Deck):
     slide = deck.slide(None)
     add_text(slide, ["NS 降噪组件化与对比测试报告"], 0.6, 0.9, 12.1, 0.9, size=40, bold=True,
              color="10243a")
-    add_text(slide, ["固件算法摘取" + SEP + "基线 vs 优化" + SEP + "D1 / D5 / D6 三项修复的量化验证"],
+    add_text(slide, ["固件算法摘取" + SEP + "缺陷归因" + SEP + "DNS-MOS 感知质量评估"],
              0.6, 1.85, 12.1, 0.4, size=19, color=COLOR_PRIMARY)
     lines = [
         "被测对象：ENC 降噪算法（noise_suppressor.c 及其依赖，共 29 个源文件）",
-        "测试量纲：16bit WAV → ×256 对齐 24bit（依据 drv_alg.c:46 `I2S_INOUT_RESOLUTION_LEVEL (2)`）",
-        "对比变体：baseline / d1 / d1d5 / optimized（同一 harness、同一输入）",
+        "评价方式：12 类逐帧指标 + DNS-MOS 无参考感知质量评估（7 个变体）",
+        "感知质量（OVRL）：不处理 %s → 基线 %s → 修复后 %s" % (
+            fmt(_ovrl(deck, "input"), 4), fmt(_ovrl(deck, "baseline"), 4),
+            fmt(_ovrl(deck, "optimized"), 4)),
         "数据规模：9 段音频 × 3 个抑制等级（L0 / L1 / L3），逐帧记录 12 类指标",
         "报告日期：%s" % deck.date,
     ]
-    deck.bullets(slide, 1, lines, left=0.6, top=2.75, width=5.9, size=16, height=3.4,
+    deck.bullets(slide, 1, lines, left=0.6, top=2.75, width=5.9, size=15, height=3.4,
                  label="封面信息")
     deck.picture(slide, 1, "FigT02", (6.85, 2.4, 5.9, 3.6), label="FigT02 缩略")
     deck.footer(slide, 1)
 
 
-def p02_conclusions(deck: Deck):
-    level = deck.level
-    base = deck.agg("baseline")
-    opt = deck.agg("optimized")
-    metrics = deck.dataset.metrics("baseline", level, "1")
-    metrics_opt = deck.dataset.metrics("optimized", level, "1")
-    se_base = (DD.column_stats(metrics, "signal_energy", head=200) or {})
-    se_opt = (DD.column_stats(metrics_opt, "signal_energy", head=200) or {})
-    subtitle = "三项结论均可回溯到具体页面与具体列；无数据项以 — 占位，不预设通过"
-    slide = deck.slide("三项核心结论", subtitle)
-
-    card1 = [
-        "D1：未初始化 Y[257] 参与 signal_energy 累加",
-        "基线启动期（前 200 帧）均值 %s" % fmt(se_base.get("head_mean"), 3),
-        "优化后启动期均值 %s" % fmt(se_opt.get("head_mean"), 3),
-        "→ 详见第 15 / 17 / 23 / 25 页",
-    ]
-    delta = _delta(opt["atten_db"] if opt else None, base["atten_db"] if base else None)
-    card2 = [
-        "影响幅度：整段平均衰减（时长加权）",
-        "基线 %s dB → 优化 %s dB" % (fmt(base["atten_db"] if base else None, 3),
-                                     fmt(opt["atten_db"] if opt else None, 3)),
-        "差值 %s dB" % fmt(delta, 3),
-        "→ 详见第 4 章与第 5 章",
-    ]
-    gain = None
-    if opt and opt.get("atten_db") and base and base.get("atten_db"):
-        gain = (opt["atten_db"] - base["atten_db"]) / abs(base["atten_db"]) * 100.0 if base["atten_db"] else None
-    card3 = [
-        "优化改善量：收益与代价",
-        "衰减提升 %s" % _pct(gain / 100.0 if gain is not None else None),
-        "RTF %s → %s" % (fmt(base["rtf"] if base else None, 4),
-                         fmt(opt["rtf"] if opt else None, 4)),
-        "→ 详见第 18 / 25 / 31 页",
-    ]
-    add_cards(slide, [("结论一", card1, COLOR_PRIMARY),
-                      ("结论二", card2, COLOR_BASE),
-                      ("结论三", card3, COLOR_GOOD)], top=1.55, height=3.3)
-
-    note_lines = [
-        "判读口径：signal_energy 直接进入语音模型归一化，其启动期偏离会沿 "
-        "diff_normalization → speech_prob_mean → gain_adjustment 逐级放大。",
-        "本页数值随 build_deck.py 重建自动更新，来源为 %s 级别的逐帧指标与汇总 CSV。" % level,
-        "另有本次新发现的 D8（fast_math.c 的 fastpow2 定义域缺陷，导致基线数据出现 nan），"
-        "不属于上述传导链，见第 25 页。",
-    ]
-    add_text(slide, note_lines, 0.6, 5.05, 12.1, 1.4, size=14, color=COLOR_SUB, spacing=6)
+def p02_answer(deck: Deck):
+    base, inp, opt = _ovrl(deck, "baseline"), _ovrl(deck, "input"), _ovrl(deck, "optimized")
+    slide = deck.slide("一句话答案",
+                       "感知质量口径（DNS-MOS OVRL，5 分制）：不处理 %s → 基线 %s → 修复后 %s" % (
+                           fmt(inp, 4), fmt(base, 4), fmt(opt, 4)))
+    add_text(slide, ["基线比“完全不处理”低 %s；修复后反超不处理 %s" % (
+        fmt(abs(_delta(base, inp)) if _delta(base, inp) is not None else None, 4),
+        fmt(_delta(opt, inp), 4))],
+        0.6, 1.5, 6.9, 0.9, size=20, bold=True, color=COLOR_OPT)
+    deck.bullets(slide, 2, [
+        "基线把质量做“低”了：OVRL %s，低于不处理的 %s（低 %s）。" % (
+            fmt(base, 4), fmt(inp, 4),
+            fmt(abs(_delta(base, inp)) if _delta(base, inp) is not None else None, 4)),
+        "修复后反超不处理：OVRL %s，比基线高 %s。" % (fmt(opt, 4), fmt(_delta(opt, base), 4)),
+        "四项修复里只有 D8 有效：D1 / D5 对输出影响为零，D6 影响极小（第 15 / 20 页）。",
+        "结论建立在 9 个文件、19046 帧的逐帧指标与 63 段 DNS-MOS 评分之上（第 19 页）。",
+    ], left=0.6, top=2.55, width=5.9, size=16, height=3.6)
+    labels, values = _dns_categories_and_values(deck, "OVRL")
+    add_bar_chart(slide, labels, [("DNS-MOS OVRL", values)], 6.85, 1.6, 5.9, 4.5,
+                  number_format="0.000")
+    deck.note(slide, 2, "柱状数据内嵌自 dnsmos/dnsmos_summary.csv 的 OVRL 列，逐变体一一对应。",
+              top=6.35, size=12)
     deck.footer(slide, 2)
 
 
-def p03_roadmap(deck: Deck):
-    base = deck.agg("baseline")
-    rows = [[chapter, pages, question] for chapter, pages, question in CHAPTERS]
-    slide = deck.slide("本次测试回答了什么",
-                       "8 章导览：每一章回答一个可以被数据证伪的问题")
-    add_table(slide, ["章节", "页", "回答的问题"], rows, left=0.8, top=1.45, width=11.7,
-              col_widths=[3.0, 1.0, 7.7], body_size=13, header_size=14, max_height=3.4,
-              row_height=0.33)
-    numbers = [
-        "9 个文件" + SEP + "总时长 %s s" % fmt(base["duration_s"] if base else None, 1),
-        "总帧数 %s" % fmt(base["frames"] if base else None),
-        "4 个变体 × 3 个等级",
-        "12 类指标",
-        "22 张图件",
+def p03_conclusions(deck: Deck):
+    nan_base = deck.dataset.nan_frames("baseline", deck.level) or {}
+    nan_opt = deck.dataset.nan_frames("optimized", deck.level) or {}
+    sp_base = deck.dataset.speech_prob("baseline", deck.level) or {}
+    sp_opt = deck.dataset.speech_prob("optimized", deck.level) or {}
+    same_d1, total_d1 = deck.dataset.wav_identical("baseline", "d1", deck.level)
+    same_d5, total_d5 = deck.dataset.wav_identical("baseline", "d1d5", deck.level)
+    slide = deck.slide("三项核心结论",
+                       "每一条都能回溯到具体页面与具体列；无数据项以 — 占位，不预设通过")
+    card1 = [
+        "D8 成立且已修：fastpow2 定义域缺陷",
+        "NaN 帧数 %s → %s（%s 帧总）" % (fmt(nan_base.get("nan_frames")),
+                                          fmt(nan_opt.get("nan_frames")),
+                                          fmt(nan_base.get("frames"))),
+        "speech_prob_mean 饱和率 %s → %s" % (
+            _pct(sp_base.get("share_at_one")), _pct(sp_opt.get("share_at_one"))),
+        "→ 第 13 / 14 页",
     ]
-    add_text(slide, ["关键数字：" + SEP.join(numbers)], 0.6, 5.4, 12.1, 0.5, size=19,
-             bold=True, color=COLOR_PRIMARY)
-    deck.bullets(slide, 3, [
-        "结论先行的顺序：先给答案（第 1 章），再给被测对象与方法（第 2–3 章），最后给证据链。",
-        "所有定量结论都在第 4–7 章逐条对应到页面与列名，可逐项复核。",
-        "未覆盖项不隐藏：第 30 页列出本次测试覆盖不到的缺陷，第 34 页列出检查方法与限制。",
-    ], left=0.6, top=6.0, width=12.1, size=14, height=1.0, label="导览说明")
+    card2 = [
+        "D1 / D5 修复对输出严格为零",
+        "输出 WAV 逐字节相同：%s/%s（D1）、%s/%s（D5）" % (same_d1, total_d1, same_d5, total_d5),
+        "钳位命中：全变体 0 次",
+        "→ 第 15 页",
+    ]
+    card3 = [
+        "基线感知质量低于不处理",
+        "OVRL 基线 %s < 不处理 %s" % (fmt(_ovrl(deck, "baseline"), 4), fmt(_ovrl(deck, "input"), 4)),
+        "差值 %s（基线更差）" % fmt(_delta(_ovrl(deck, "baseline"), _ovrl(deck, "input")), 4),
+        "→ 第 16 页",
+    ]
+    add_cards(slide, [("结论一", card1, COLOR_OPT),
+                      ("结论二", card2, COLOR_PRIMARY),
+                      ("结论三", card3, COLOR_WARN)], top=1.55, height=3.3)
+    add_text(slide, [
+        "判读口径：DNS-MOS 为无参考感知质量模型打分（非听感主观评价），四指标为 SIG / BAK / OVRL / P808_MOS。",
+        "本页数值随 build_deck.py 重建自动更新，来源为 dnsmos_summary.csv 与 %s 级别的逐帧指标。" % deck.level,
+    ], 0.6, 5.05, 12.1, 1.4, size=14, color=COLOR_SUB, spacing=6)
     deck.footer(slide, 3)
 
 
-def p04_answer(deck: Deck):
-    base = deck.agg("baseline")
-    opt = deck.agg("optimized")
-    slide = deck.slide("一句话答案",
-                       "基线在启动期把 signal_energy 抬高，导致语音模型归一化偏移、维纳增益失真；"
-                       "打开 D1 后传导链被切断")
-    if base and opt:
-        headline = "整段平均衰减（时长加权）：基线 %s dB → 优化 %s dB（差 %s dB）" % (
-            fmt(base["atten_db"], 3), fmt(opt["atten_db"], 3),
-            fmt(_delta(opt["atten_db"], base["atten_db"]), 3))
-    else:
-        headline = "整段平均衰减：数据缺失（待 P2/P3 产出后自动填充）"
-    add_text(slide, [headline], 0.6, 1.55, 12.1, 0.6, size=22, bold=True, color=COLOR_OPT)
-    deck.bullets(slide, 4, [
-        "D1 成立：基线 signal_energy 在启动期偏离优化值，且偏离沿四级传导链扩散。",
-        "影响可控：整段衰减差异集中在启动期与低语音概率段，稳态差异很小。",
-        "修复方式：仅由 src/ns_patch.h 的三个编译开关控制，基线行为与固件逐位一致。",
-    ], left=0.6, top=2.4, width=5.9, size=17, height=3.4)
-    deck.picture(slide, 4, "FigT01", HALF_IMG_RIGHT)
+def p04_dnsmos(deck: Deck):
+    base, opt, ref = _ovrl(deck, "baseline"), _ovrl(deck, "optimized"), _ovrl(deck, "reference")
+    slide = deck.slide("语音整体质量对比（DNS-MOS）",
+                       "四指标 × 7 变体：修复后 OVRL %s，基线 %s，参照路径 %s；差异集中在 BAK 与 OVRL"
+                       % (fmt(opt, 4), fmt(base, 4), fmt(ref, 4)))
+    deck.picture(slide, 4, "FigT23", FULL_IMG_BOX)
     deck.footer(slide, 4)
 
 
-def p05_component(deck: Deck):
+def p05_problems(deck: Deck):
+    slide = deck.slide("问题所在：5 项缺陷 + 3 项零效果 + 1 项定性修正",
+                       "一页看全本次测试对每个缺陷的判定、影响与修复效果")
+    rows = [
+        ["D8", "fastpow2 定义域缺陷 → NaN", "本次新发现，成立",
+         "speech_prob_mean 481 帧 NaN、饱和率 92.3%", "已修复 → OVRL 提升"],
+        ["D1", "未初始化 Y[257] 污染 signal_energy", "成立（审查报告）",
+         "诊断量被改变，但未传导至输出", "修复后输出逐字节相同 → 无效"],
+        ["D5", "输出钳位量程写死 24bit", "成立（审查报告）",
+         "钳位从未触发（0 命中）", "修复后输出逐字节相同 → 无效"],
+        ["D6", "fastsqrt 位近似开方", "成立（审查报告）",
+         "改变数值路径与 NaN 分布", "影响极小（OVRL +0.0067）"],
+        ["D2", "中断触发丢失、双缓冲错位", "未覆盖",
+         "需硬件中断竞争上下文", "未验证（第 18 页）"],
+        ["D3", "ENC 关闭期采集指针不递增", "未覆盖",
+         "属 app 层调度行为", "未验证（第 18 页）"],
+    ]
+    add_table(slide, ["编号", "缺陷", "判定", "实测影响", "修复效果"], rows,
+              left=0.8, top=1.45, width=11.7, col_widths=[0.8, 3.5, 1.7, 3.0, 2.7],
+              body_size=12, header_size=13, max_height=3.9, row_height=0.58)
+    deck.note(slide, 5, "判定只取三种值：成立 / 未覆盖 / 不成立；“零效果”指修复后输出 WAV 与基线逐字节相同"
+                        "（第 15 页）或感知差异低于模型分辨率（第 20 页）。", top=6.15, size=12)
+    deck.footer(slide, 5)
+
+
+def p06_scope(deck: Deck):
+    base = deck.agg("baseline")
+    slide = deck.slide("本次测试的定位与边界",
+                       "5 章导览 + 关键数字；本报告只主张“本次量测范围内”的结论")
+    rows = [[chapter, pages, question] for chapter, pages, question in CHAPTERS]
+    add_table(slide, ["章节", "页", "回答的问题"], rows, left=0.8, top=1.45, width=11.7,
+              col_widths=[3.0, 1.0, 7.7], body_size=13, header_size=14, max_height=3.0,
+              row_height=0.40)
+    numbers = [
+        "9 个文件" + SEP + "总时长 %s s" % fmt(base["duration_s"] if base else None, 1),
+        "总帧数 %s" % fmt(base["frames"] if base else None),
+        "5 个消融变体 + 不处理 + 参照",
+        "12 类逐帧指标",
+        "23 张图件",
+    ]
+    add_text(slide, ["关键数字：" + SEP.join(numbers)], 0.6, 5.0, 12.1, 0.5, size=18, bold=True,
+             color=COLOR_PRIMARY)
+    deck.bullets(slide, 6, [
+        "边界一：被测对象是组件层（ENC/NS_Component），不含 app 层调度与中断上下文。",
+        "边界二：harness 为单线程连续调用，D2 / D3 这类时序缺陷无法复现（第 18 页）。",
+        "边界三：感知质量由 DNS-MOS 模型给出，不等价于听感主观评价；量纲假设见第 29 页。",
+    ], left=0.6, top=5.55, width=12.1, size=14, height=1.4)
+    deck.footer(slide, 6)
+
+
+def p07_component(deck: Deck):
     slide = deck.slide("从固件工程中摘出的独立组件",
                        "29 个源文件逐文件搬运，只改 include 与平台宏，算法算式零改动")
-    deck.bullets(slide, 5, [
+    deck.bullets(slide, 7, [
         "分层：api/（ns_api.h 公共入口）· src/（算法 29 文件）· compat/（CMSIS 兼容层）· harness/（Test）",
         "摘取范围：enc.c / noise_suppressor.c / fast_math.c / histograms.c / "
         "prior_signal_model*.c 等（计划书 14.1 冻结清单）",
         "去平台化：GPIO 打点、__breakpoint、RAM 段宏、厂商头文件全部剥离，不参与编译",
-        "唯一改动通道：src/ns_patch.h 的 D1 / D5 / D6 / D8 四个编译开关（第 6 页）",
+        "唯一改动通道：src/ns_patch.h 的 D1 / D5 / D6 / D8 四个编译开关（第 10 页）",
         "接口冻结：48 kHz / 480 样本每帧（10 ms）/ 单声道 / 256 点 FFT",
     ], left=0.6, top=1.45, width=12.1, size=15, height=1.6)
-    deck.picture(slide, 5, "FigT02", (0.6, 3.15, 12.13, 3.75))
-    deck.footer(slide, 5)
-
-
-def p06_switches(deck: Deck):
-    slide = deck.slide("基线与优化版只差四个开关",
-                       "同一份源码、同一编译器、同一输入；唯一变量是 CMake 注入的四个宏")
-    rows = [
-        ["D1", "noise_suppressor.c:331 / :388（FFT 回填后）",
-         "不写入：Y[257] 保留未初始化栈值并累加进 signal_energy",
-         "显式 Y[kFftSize+1] = 0.0f，切断污染源"],
-        ["D5", "noise_suppressor.c:439（输出钳位）",
-         "写死 24bit 量程：±8388607",
-         "随 ENC_SAMPLE_DEPTH 派生：+8388607 / −8388608"],
-        ["D6", "noise_suppressor.c:134、wiener_filter.c:88（幅度谱开方）",
-         "fastsqrt（位近似）",
-         "sqrtf（精确开方）"],
-        ["D8", "fast_math.c（fastpow2 定义域缺陷）",
-         "定义域外取值产生 NaN，沿诊断量与输出传播（本次新发现）",
-         "修正定义域处理，消除 NaN"],
-    ]
-    add_table(slide, ["开关", "代码位置", "基线（=0，对齐固件）", "优化（=1）"], rows,
-              left=0.8, top=1.45, width=11.7, col_widths=[0.8, 3.0, 4.0, 3.2],
-              body_size=11, header_size=13, max_height=3.2, row_height=0.64)
-    deck.bullets(slide, 6, [
-        "开关默认全 0：基线构建下四个宏展开为空或保持原值，行为与固件逐位一致。",
-        "D1 修未定义行为（未初始化栈内存），D8 修定义域缺陷（NaN 传播）；两者都不是调参。",
-        "D5 只改钳位边界常量，D6 只改开方实现；四者均不改变算法结构。",
-    ], left=0.6, top=4.85, width=12.1, size=15, height=1.5)
-    deck.footer(slide, 6)
-
-
-def p07_scale(deck: Deck):
-    slide = deck.slide("测试量纲必须与固件一致",
-                       "量纲不对齐时，钳位边界与谱能量都会失真，结论不可移植")
-    chain = [
-        "16bit WAV（±32768）",
-        "×256（左移 8 位）",
-        "24bit 量纲（±8388608）",
-        "NS_Process48k",
-        "÷256 + 钳位（−32768 … 32767）",
-        "16bit 输出 WAV",
-    ]
-    add_text(slide, ["  →  ".join(chain)], 0.6, 1.5, 12.1, 0.7, size=19, bold=True,
-             color=COLOR_PRIMARY, align=PP_ALIGN.CENTER)
-    deck.bullets(slide, 7, [
-        "依据一：drv_alg.c:46 `#define I2S_INOUT_RESOLUTION_LEVEL (2)`",
-        "依据二：drv_alg.c:646 `*fInAdcL++ = (float)(*i32InAdcL++ >> 8);` 即固件侧浮点值为 24bit 量纲",
-        "算法内部钳位与 24bit 匹配：noise_suppressor.c:439 的 ±8388607",
-        "本次换算（已冻结）：输入 sample24 = int16 × 256；输出 out16 = clamp(round(out24 / 256), −32768, 32767)",
-        "风险与兜底：若出厂固件的 I2S_INOUT_RESOLUTION_LEVEL 不是 2，则基线需按 16bit 重跑（第 34 页）",
-    ], left=0.6, top=2.5, width=12.1, size=16, height=3.9)
+    deck.picture(slide, 7, "FigT02", (0.6, 3.15, 12.13, 3.75))
     deck.footer(slide, 7)
 
 
-def p08_dataset(deck: Deck):
+def p08_scale_data(deck: Deck):
     level = deck.level
     rows_raw = deck.dataset.summary("baseline", level)
     table_rows = []
     if rows_raw:
-        for row in rows_raw:
+        for row in rows_raw[:9]:
             table_rows.append([
                 str(row.get("file", "")), fmt(row.get("duration_s"), 2),
-                fmt(row.get("frames")), fmt(row.get("in_rms"), 1), fmt(row.get("out_rms"), 1),
-                fmt(row.get("atten_db"), 3), fmt(row.get("in_peak"), 1),
-                fmt(row.get("clamp_hits_total")),
+                fmt(row.get("frames")), fmt(row.get("in_rms"), 1),
+                fmt(row.get("atten_db"), 3),
             ])
     else:
-        table_rows = [["—"] * 8 for _ in range(9)]
+        table_rows = [["—"] * 5 for _ in range(9)]
     base = deck.agg("baseline")
-    subtitle = "baseline / %s：" % level + (
-        "共 %d 个文件、%s 秒、%s 帧，逐帧 480 样本 @48 kHz" % (
-            base["files"], fmt(base["duration_s"], 1), fmt(base["frames"]))
-        if base else "测量数据缺失，待 P2/P3 产出后重建")
-    slide = deck.slide("9 个音频、190 秒、全覆盖", subtitle)
-    add_table(slide, ["文件", "时长 (s)", "帧数", "输入 RMS", "输出 RMS", "衰减 (dB)",
-                      "输入峰值", "钳位命中"], table_rows, left=0.8, top=1.45, width=11.7,
-              col_widths=[1.0, 1.2, 1.2, 1.6, 1.6, 1.5, 1.4, 1.2], body_size=13,
-              header_size=15, max_height=4.4, row_height=0.40)
-    deck.note(slide, 8, _data_note(deck.dataset, level), top=5.95, size=13)
+    slide = deck.slide("量纲与测试数据",
+                       "量纲必须与固件一致，否则钳位边界与谱能量都会失真；数据规模 %s 秒 / %s 帧" % (
+                           fmt(base["duration_s"] if base else None, 2),
+                           fmt(base["frames"] if base else None)))
+    add_text(slide, ["16bit WAV（±32768）  →  ×256（左移 8 位）  →  24bit 量纲（±8388608）  →  "
+                     "NS_Process48k  →  ÷256 + 钳位（−32768 … 32767）  →  16bit 输出 WAV"],
+             0.6, 1.45, 12.1, 0.6, size=16, bold=True, color=COLOR_PRIMARY,
+             align=PP_ALIGN.CENTER)
+    add_table(slide, ["文件", "时长 (s)", "帧数", "输入 RMS", "衰减 (dB)"], table_rows,
+              left=0.8, top=2.2, width=5.6, col_widths=[1.0, 1.2, 1.2, 1.3, 1.3],
+              body_size=12, header_size=13, max_height=3.6, row_height=0.34)
+    deck.bullets(slide, 8, [
+        "依据一：drv_alg.c:46 `#define I2S_INOUT_RESOLUTION_LEVEL (2)`；依据二：drv_alg.c:646 `>> 8`。",
+        "算法内部钳位与 24bit 匹配：noise_suppressor.c:439 的 ±8388607。",
+        "本次换算（已冻结）：输入 sample24 = int16 × 256；输出 out16 = clamp(round(out24 / 256), −32768, 32767)。",
+        "风险：若出厂固件的 I2S_INOUT_RESOLUTION_LEVEL 不是 2，基线需按 16bit 重跑（第 29 / 34 页）。",
+    ], left=6.7, top=2.2, width=6.0, size=14, height=3.6)
     deck.footer(slide, 8)
 
 
-def p09_build(deck: Deck):
+def p09_evaluation(deck: Deck):
+    slide = deck.slide("如何评价：逐帧指标 + 感知质量",
+                       "两条互补的证据链：可逐帧复算的过程量，与面向听感的质量分")
+    rows = [
+        ["时域", "frame_idx / in_rms / out_rms / atten_db", "衰减是否发生、发生多少", "可逐行复算"],
+        ["频域", "signal_energy / signal_spectral_sum", "能量与谱形态是否失真", "D8 的污染入口"],
+        ["诊断", "diff_normalization / speech_prob_mean / prior_speech_prob / gain_adjustment / clamp_hits",
+         "算法内部决策是否偏移", "D1 / D8 的观测点"],
+        ["性能", "elapsed_us", "实时性是否达标", "RTF 与分位耗时"],
+    ]
+    add_table(slide, ["分类", "代表列", "回答的问题", "作用"], rows, left=0.8, top=1.45,
+              width=11.7, col_widths=[0.9, 4.4, 3.4, 3.0], body_size=12, header_size=13,
+              max_height=2.9, row_height=0.62)
+    deck.bullets(slide, 9, [
+        "DNS-MOS：无参考语音质量评估模型，输出 SIG / BAK / OVRL / P808_MOS 四项分数（1–5，越高越好）。",
+        "为什么不用 PESQ：PESQ 属有参考评估，需要与干净参考信号逐样本对齐；本次素材的“原始”本身已含噪，"
+        "不存在可用作参考的干净版本，故改用无参考的 DNS-MOS。",
+        "评分对象：每个变体在每个文件上的输出 WAV，共 7 变体 × 9 文件 = 63 段（逐段按时长分片后取均值）。",
+        "两条证据链的分工：逐帧指标解释“为什么变”，DNS-MOS 回答“变得好不好”。",
+        "局限：DNS-MOS 是客观模型打分，不等价于听感主观评价（第 29 页）。",
+    ], left=0.6, top=4.7, width=12.1, size=13, height=2.2)
+    deck.footer(slide, 9)
+
+
+def p10_build(deck: Deck):
     keys = ["variant", "patch_flags", "sample_depth", "cmake_generator", "build_type",
             "compiler", "c_flags", "git_commit", "build_time"]
     labels = ["变体", "开关位", "样本深度", "CMake 生成器", "构建类型", "编译器",
@@ -710,44 +745,15 @@ def p09_build(deck: Deck):
     flags_line = "开关位（patch_flags，逐值读自 build_info.txt）：" + "、".join(
         "%s = %s" % (variant, (info or {}).get("patch_flags", "—"))
         for variant, info in zip(VARIANTS, infos)) + "；位定义 bit0 = D1、bit1 = D5、bit2 = D6、bit3 = D8。"
-    deck.bullets(slide, 9, [
+    deck.bullets(slide, 10, [
         flags_line,
         "编译器与选项固定，构建类型 Release；同一 commit 可复现同一份 .pptx 输入。",
-        "重建方式：python build_deck.py（第 12 页给出全部命令）。",
+        "重建方式：python build_deck.py（第 11 页给出全部命令）。",
     ], left=0.6, top=5.6, width=12.1, size=14, height=1.4)
-    deck.footer(slide, 9)
-
-
-def p10_pipeline(deck: Deck):
-    slide = deck.slide("逐帧处理，逐帧记录",
-                       "每个输入帧都产生一行指标，报告中的每条曲线都由这些行直接绘制")
-    add_text(slide, [
-        "输入 WAV（16bit / 2ch / 48 kHz） → 取左声道 → ×256 → 480 样本/帧（10 ms） → "
-        "ns_core_<variant>(level) → ÷256 + 钳位 → 输出 WAV（16bit / 1ch）",
-        "每帧回写 12 列指标 → metrics_<name>.csv → Python 分析出图 → python-pptx → 本报告",
-    ], 0.6, 1.5, 12.1, 1.3, size=16, color=COLOR_PRIMARY, spacing=10)
-    deck.bullets(slide, 10, [
-        "帧长固定 480 样本：与固件 1 ms I2S 帧周期一致（D2 的触发条件正依赖这一点）。",
-        "末帧补零后裁剪回原长，输入输出严格等长，便于逐样本对齐比较。",
-        "基线与优化共用同一 harness、同一输入序列，指标 CSV 的行数逐文件一致。",
-        "所有中间 CSV 与 WAV 保留在 ENC/Test/data 下，报告数字可逐行复核。",
-    ], left=0.6, top=3.0, width=12.1, size=16, height=3.4)
     deck.footer(slide, 10)
 
 
-def p11_metrics(deck: Deck):
-    slide = deck.slide("12 类指标覆盖时域 / 频域 / 诊断 / 性能",
-                       "列定义与测试 harness 的导出表头逐字一致，禁止写 NaN / Inf")
-    rows = [[name, kind, desc, group] for name, kind, desc, group in METRIC_TABLE]
-    add_table(slide, ["列名", "类型", "含义", "分类"], rows, left=0.8, top=1.45,
-              width=11.7, col_widths=[2.6, 1.1, 6.4, 1.6], body_size=12, header_size=13,
-              max_height=4.9, row_height=0.37)
-    deck.note(slide, 11, "数值格式：浮点 %.9g、整数 %d；实测出现的 nan 已归因到 D8（第 25 页），"
-                         "报告按原样保留、不替换为 0。", top=6.35, size=13)
-    deck.footer(slide, 11)
-
-
-def p12_commands(deck: Deck):
+def p11_reproduce(deck: Deck):
     slide = deck.slide("一键复现",
                        "从源码到本报告的完整链路；下列命令即本次测试实际执行的命令")
     commands = [
@@ -765,380 +771,175 @@ def p12_commands(deck: Deck):
     ]
     add_text(slide, commands, 0.8, 1.5, 11.7, 3.9, size=14, color="1b2733", spacing=2,
              line_spacing=1.0)
-    deck.bullets(slide, 12, [
+    deck.bullets(slide, 11, [
         "run_all.py 内部依次调用出图脚本、build_deck.py、check_deck.py。",
         "单独重建报告：python build_deck.py；单独校验：python check_deck.py。",
         "校验命令原文见第 34 页；渲染只走仓库内置 LibreOffice Kit，不调用系统 LibreOffice。",
     ], left=0.6, top=5.5, width=12.1, size=14, height=1.4)
+    deck.footer(slide, 11)
+
+
+def p12_problem_matrix(deck: Deck):
+    slide = deck.slide("问题总览：判定矩阵",
+                       "先给判定，再给证据：每一项缺陷要么有实测依据，要么明确标注未覆盖")
+    rows = [
+        ["D1", "成立", "诊断量被改变（signal_energy 等 4 列）", "输出 WAV 逐字节相同", "无效"],
+        ["D5", "成立", "钳位从未触发（0 命中）", "输出 WAV 逐字节相同", "无效"],
+        ["D6", "成立", "改变数值路径与 NaN 分布（481 → 500）", "输出 WAV 不同但感知差 +0.0067", "极小"],
+        ["D8", "成立（新发现）", "NaN 481 帧 + 饱和率 92.3%", "输出 WAV 变为有效值", "显著"],
+        ["D2", "未覆盖", "需中断竞争上下文", "单线程 harness 无法复现", "未验证"],
+        ["D3", "未覆盖", "属 app 层调度行为", "组件层不体现", "未验证"],
+    ]
+    add_table(slide, ["编号", "判定", "关键实测证据", "对输出的影响", "修复效果"], rows,
+              left=0.8, top=1.45, width=11.7, col_widths=[0.8, 1.4, 4.4, 3.2, 1.9],
+              body_size=12, header_size=13, max_height=3.9, row_height=0.58)
+    deck.note(slide, 12, "“无效 / 极小 / 显著”三级来自同一口径：输出 WAV 的逐字节比较与 DNS-MOS OVRL 变化"
+                         "（第 15 / 20 页）。", top=6.15, size=12)
     deck.footer(slide, 12)
 
 
-def p13_baseline(deck: Deck):
-    base = deck.agg("baseline")
-    nan_count = (base or {}).get("nan_count") or 0
-    subtitle = "基线 = 与固件逐位一致的构建；下列指标即“出厂状态”的整段表现"
-    if nan_count:
-        subtitle += "；其中 %d 个文件为 nan（D8 缺陷表现，见第 25 页），不计入平均" % nan_count
-    slide = deck.slide("改动前的整体表现", subtitle)
-    cards = [
-        ("平均衰减", ["%s dB" % fmt(base["atten_db"] if base else None, 3),
-                      "口径：时长加权，%s" % deck.level,
-                      "排除 nan %d 个文件" % nan_count if nan_count
-                      else "%d 个文件全部有效" % (base["files"] if base else 0)], COLOR_BASE),
-        ("总时长 / 帧数", ["%s s" % fmt(base["duration_s"] if base else None, 1),
-                            "%s 帧" % fmt(base["frames"] if base else None),
-                            "480 样本/帧"], COLOR_PRIMARY),
-        ("实时率 RTF", [fmt(base["rtf"] if base else None, 4),
-                        "总耗时 %s ms" % fmt(base["total_elapsed_ms"] if base else None, 1),
-                        "越小越好"], COLOR_GOOD),
-        ("钳位总命中", [fmt(base["clamp_hits_total"] if base else None),
-                        "基线固定 ±8388607", "D5 相关（第 26 页）"], COLOR_WARN),
-    ]
-    add_cards(slide, cards, top=1.45, height=1.45, title_size=15, body_size=13)
-    deck.picture(slide, 13, "FigT01", (0.6, 3.05, 5.9, 3.8))
+def p13_d8_root(deck: Deck):
+    slide = deck.slide("D8：新发现的 NaN 缺陷（根因）",
+                       "fast_math.c 的 fastpow2 在定义域外取值错误，NaN 经 fastexp 传播到语音概率")
+    add_text(slide, [
+        "fastpow2 位重解释失效  →  avg_log_lrt 计算偏离  →  fastexp(−avg_log_lrt) 在 y < −88.7 时得 NaN"
+        "  →  speech_probability = NaN  →  speech_prob_mean 为 nan",
+    ], 0.6, 1.5, 12.1, 0.8, size=16, bold=True, color=COLOR_OPT, align=PP_ALIGN.CENTER)
     deck.bullets(slide, 13, [
-        "整段平均衰减在 1 dB 量级：噪声抑制是“轻度”作用，单看数值难以判断好坏。",
-        "各文件差异来自素材本身的信噪比与静音比例，需逐文件对齐后再比较（第 14 页）。",
-        "钳位命中说明输出已触到量程边界，是 D5 的观察入口。",
-    ], left=6.85, top=3.15, width=5.9, size=15, height=3.6, label="要点")
+        "根因位置：fast_math.c 的 fastpow2（位重解释实现），在定义域外取值时结果错误。",
+        "传播路径：错误值经 fastexp 放大为 NaN；NaN 只污染诊断量 speech_prob_mean。",
+        "为什么输出没坏：wiener_filter.c 的 MIN(NaN, 1.0f) 在 C 宏语义下返回 1.0f，把 NaN 挡在滤波器之外。",
+        "为什么仍要修：NaN 使该帧的诊断量完全不可用，并让整个变体的 speech_prob_mean 长期饱和（第 14 页）。",
+        "判定：属“数值失效”类缺陷，而非“量级偏差”类 —— 优先级高于 D1 / D5 / D6。",
+    ], left=0.6, top=2.4, width=12.1, size=15, height=4.3)
     deck.footer(slide, 13)
 
 
-def p14_baseline_table(deck: Deck):
+def p14_d8_scope(deck: Deck):
     level = deck.level
-    rows_raw = deck.dataset.summary("baseline", level)
-    rows = []
-    if rows_raw:
-        for row in rows_raw:
-            rows.append([str(row.get("file", "")), fmt(row.get("duration_s"), 2),
-                         fmt(row.get("frames")), fmt(row.get("in_rms"), 1),
-                         fmt(row.get("out_rms"), 1), fmt(row.get("atten_db"), 3),
-                         fmt(row.get("total_elapsed_ms"), 1),
-                         fmt(row.get("clamp_hits_total"))])
-    else:
-        rows = [["—"] * 8 for _ in range(9)]
-    slide = deck.slide("逐文件明细（基线）",
-                       "放大镜下的基线：这是后续一切对比的参照系")
-    add_table(slide, ["文件", "时长 (s)", "帧数", "输入 RMS", "输出 RMS", "衰减 (dB)",
-                      "总耗时 (ms)", "钳位命中"], rows, left=0.8, top=1.45, width=11.7,
-              col_widths=[1.0, 1.2, 1.2, 1.6, 1.6, 1.5, 1.6, 1.2], body_size=13,
-              header_size=15, max_height=4.5, row_height=0.44)
-    nan_count = (deck.agg("baseline") or {}).get("nan_count") or 0
-    nan_note = ("。表中 nan 为被测对象（固件）固有缺陷的真实表现（D8），不是测量故障，"
-                "且不计入整段平均") if nan_count else ""
-    deck.note(slide, 14, _data_note(deck.dataset, level) + nan_note, top=6.05, size=12)
+    prof_base = deck.dataset.speech_prob("baseline", level) or {}
+    prof_opt = deck.dataset.speech_prob("optimized", level) or {}
+    ratio = None
+    if prof_base.get("nan_frames") is not None and prof_base.get("frames"):
+        ratio = prof_base["nan_frames"] / prof_base["frames"]
+    slide = deck.slide("D8 的影响范围",
+                       "NaN 之外更严重的是饱和：基线 92.3% 的帧把 speech_prob_mean 顶在 1.0")
+    rows = [
+        ["NaN 帧数", fmt(prof_base.get("nan_frames")), fmt(prof_opt.get("nan_frames")),
+         "%s / %s = %s" % (fmt(prof_base.get("nan_frames")), fmt(prof_base.get("frames")),
+                           _pct(ratio, 2))],
+        ["speech_prob_mean 中位数", fmt(prof_base.get("median"), 4), fmt(prof_opt.get("median"), 4),
+         "基线饱和在 1.0，修复后回到真实分布"],
+        ["饱和率（≥ 0.999 的帧占比）", _pct(prof_base.get("share_at_one")),
+         _pct(prof_opt.get("share_at_one")), "诊断量信息在基线中几乎完全丢失"],
+        ["1% / 99% 分位", "%s / %s" % (fmt(prof_base.get("p01"), 4), fmt(prof_base.get("p99"), 4)),
+         "%s / %s" % (fmt(prof_opt.get("p01"), 4), fmt(prof_opt.get("p99"), 4)),
+         "两端形态一致，差异集中在上端饱和"],
+    ]
+    add_table(slide, ["指标", "基线", "优化（含 D8）", "判读"], rows, left=0.8, top=1.45,
+              width=11.7, col_widths=[2.6, 2.2, 2.4, 4.5], body_size=12, header_size=13,
+              max_height=2.5, row_height=0.55)
+    deck.picture(slide, 14, "FigT10", (0.6, 4.35, 12.13, 2.5))
     deck.footer(slide, 14)
 
 
-def p15_startup(deck: Deck):
+def p15_zero_effect(deck: Deck):
     level = deck.level
-    metrics = deck.dataset.metrics("baseline", level, "1")
-    metrics_opt = deck.dataset.metrics("optimized", level, "1")
-    stats = DD.column_stats(metrics, "signal_energy", head=200) or {}
-    stats_opt = DD.column_stats(metrics_opt, "signal_energy", head=200) or {}
-    ratio = None
-    if stats.get("head_mean") and stats.get("mean"):
-        ratio = stats["head_mean"] / stats["mean"] if stats["mean"] else None
-    slide = deck.slide("启动期的异常特征",
-                       "形态差异不在声谱上，而在诊断量 signal_energy 的启动段")
+    same, total = deck.dataset.wav_identical("baseline", "d1", level)
+    same5, total5 = deck.dataset.wav_identical("baseline", "d1d5", level)
+    same6, total6 = deck.dataset.wav_identical("baseline", "d1d5d6", level)
+    agg = deck.agg("baseline")
+    nan5 = deck.dataset.nan_frames("d1d5", level) or {}
+    nan6 = deck.dataset.nan_frames("d1d5d6", level) or {}
+    rows = [
+        ["D1", "未初始化 Y[257] 污染 signal_energy",
+         "输出 WAV %s/%s 逐字节相同" % (same, total), "诊断量改变但未传导到输出", "无效"],
+        ["D5", "输出钳位量程写死 24bit",
+         "输出 WAV %s/%s 逐字节相同" % (same5, total5),
+         "钳位从未触发（总命中 %s）" % fmt(agg["clamp_hits_total"] if agg else None), "无效"],
+        ["D6", "fastsqrt 位近似开方",
+         "输出 WAV %s/%s 相同（即全部不同）" % (same6, total6),
+         "NaN 帧数 %s → %s" % (fmt(nan5.get("nan_frames")), fmt(nan6.get("nan_frames"))), "极小"],
+    ]
+    slide = deck.slide("D1 / D5 / D6：修复效果实测",
+                       "D1 / D5 对输出严格为零（逐字节相同）；D6 改变了输出，但幅度极小")
+    add_table(slide, ["修复项", "机理", "输出 WAV 逐字节比较", "诊断量变化", "判定"], rows,
+              left=0.8, top=1.45, width=11.7, col_widths=[0.9, 3.3, 3.0, 3.2, 1.3],
+              body_size=12, header_size=13, max_height=2.6, row_height=0.62)
     deck.bullets(slide, 15, [
-        "signal_energy 是频域能量累加量，直接进入语音模型的归一化分支。",
-        "基线（1.wav / %s）：前 200 帧均值 %s，全段均值 %s，启动期/全段 = %s" % (
-            level, fmt(stats.get("head_mean"), 3), fmt(stats.get("mean"), 3),
-            fmt(ratio, 3) if ratio is not None else "—"),
-        "优化后同口径：前 200 帧均值 %s，全段均值 %s" % (
-            fmt(stats_opt.get("head_mean"), 3), fmt(stats_opt.get("mean"), 3)),
-        "判读：基线启动段被未初始化的 Y[257] 抬高，偏离随帧数衰减（栈值被逐步覆盖）。",
-        "结论指向 D1：修复点在 FFT 回填后显式置零，而不是调整任何算法参数。",
-    ], left=0.6, top=1.45, width=12.1, size=15, height=2.3)
-    deck.picture(slide, 15, "FigT07", STRIP_IMG_BOX)
+        "判据：对同一变体的 9 个输出 WAV 逐文件计算 SHA256，与基线比较；相同即“对输出零影响”。",
+        "D1 的意义不在输出：它修的是未定义行为（读未初始化栈内存），移除该风险本身即有价值。",
+        "D5 零效果的原因很直接：本次素材的输出从未触达钳位边界，量程写死与否都不影响结果。",
+        "D6 是三项“无效修复”中唯一改变输出的：字节变了，但感知差异只有 %s（第 20 页）。" % (
+            fmt(_delta(_ovrl(deck, "d1d5d6"), _ovrl(deck, "d1d5")), 4)),
+        "因此“修复数量”与“修复收益”无关：四项修复里真正产生收益的只有 D8。",
+    ], left=0.6, top=4.35, width=12.1, size=14, height=2.5)
     deck.footer(slide, 15)
 
 
-def p16_spectrogram_base(deck: Deck):
-    slide = deck.slide("声谱上看不出明显异常",
-                       "原始 vs 基线：肉眼可见的形态差异极小，单靠声谱无法判定 D1 是否存在")
-    deck.picture(slide, 16, "FigT05", FULL_IMG_BOX)
+def p16_below_input(deck: Deck):
+    slide = deck.slide("基线低于不处理",
+                       "“加了降噪”反而更差：OVRL 与 SIG 双降，BAK 仅微升")
+    rows = [
+        ["OVRL 整体质量", fmt(_ovrl(deck, "input"), 4), fmt(_ovrl(deck, "baseline"), 4),
+         fmt(_delta(_ovrl(deck, "baseline"), _ovrl(deck, "input")), 4)],
+        ["SIG 语音质量", fmt(_dnsmos_cell(deck, "input", "SIG"), 4),
+         fmt(_dnsmos_cell(deck, "baseline", "SIG"), 4),
+         fmt(_delta(_dnsmos_cell(deck, "baseline", "SIG"), _dnsmos_cell(deck, "input", "SIG")), 4)],
+        ["BAK 背景噪声", fmt(_dnsmos_cell(deck, "input", "BAK"), 4),
+         fmt(_dnsmos_cell(deck, "baseline", "BAK"), 4),
+         fmt(_delta(_dnsmos_cell(deck, "baseline", "BAK"), _dnsmos_cell(deck, "input", "BAK")), 4)],
+        ["P808_MOS", fmt(_dnsmos_cell(deck, "input", "P808_MOS"), 4),
+         fmt(_dnsmos_cell(deck, "baseline", "P808_MOS"), 4),
+         fmt(_delta(_dnsmos_cell(deck, "baseline", "P808_MOS"),
+                    _dnsmos_cell(deck, "input", "P808_MOS")), 4)],
+    ]
+    add_table(slide, ["指标", "不处理（原始输入）", "基线（对齐固件）", "差值（基线 − 不处理）"], rows,
+              left=0.8, top=1.45, width=11.7, col_widths=[2.6, 3.1, 3.1, 2.9], body_size=12,
+              header_size=13, max_height=2.6, row_height=0.55)
+    labels, values = _dns_categories_and_values(deck, "OVRL",
+                                                ("input", "baseline", "optimized"))
+    add_bar_chart(slide, labels, [("DNS-MOS OVRL", values)], 0.8, 4.3, 6.0, 2.5,
+                  number_format="0.000")
+    deck.bullets(slide, 16, [
+        "现象：降噪链路的整体质量与语音质量都低于“完全不处理”，只有背景噪声略有改善。",
+        "原因链条：D8 让语音概率长期饱和在 1.0（第 14 页），语音/噪声判定失真，语音成分被误判处理。",
+        "修复后（第 4 / 20 页）：OVRL 与 BAK 同时超过不处理，说明 D8 是这条负面链条的源头。",
+        "注意口径：DNS-MOS 是模型打分；该结论只在本次 9 个文件的素材范围内成立。",
+    ], left=7.0, top=4.35, width=5.7, size=13, height=2.5)
     deck.footer(slide, 16)
 
 
-def p17_diagnostics(deck: Deck):
-    slide = deck.slide("但诊断量暴露了问题",
-                       "四级传导链：signal_energy → diff_normalization → speech_prob_mean → gain_adjustment")
+def p17_audit_revision(deck: Deck):
+    slide = deck.slide("前置审查结论的修正",
+                       "本次实测对《NS移植缺陷审查报告》的两处结论做出修正，并新增一项未覆盖缺陷")
+    rows = [
+        ["D6", "量化误差级，影响可忽略",
+         "对衰减量确无差异，但会改变数值路径与 NaN 分布（481 → 500），"
+         "且输出 WAV 与基线不同", "第 15 / 20 页"],
+        ["D6", "幅度谱约 0.096% 的固定偏置",
+         "实测未观察到可归因于该偏置的感知差异（OVRL +0.0067，低于模型分辨率）",
+         "第 20 页"],
+        ["D8", "（审查报告未覆盖）",
+         "本次新发现：fastpow2 定义域缺陷导致 NaN 与诊断量饱和，是唯一有效修复项",
+         "第 13 / 14 页"],
+    ]
+    add_table(slide, ["编号", "审查原结论", "本次修正", "依据"], rows, left=0.8, top=1.45,
+              width=11.7, col_widths=[0.8, 3.4, 5.4, 2.1], body_size=12, header_size=13,
+              max_height=3.0, row_height=0.72)
     deck.bullets(slide, 17, [
-        "一级 signal_energy：启动期被未初始化 Y[257] 抬高（第 15 页）。",
-        "二级 diff_normalization：归一化基准被抬高，谱差特征整体偏移。",
-        "三级 speech_prob_mean：语音/噪声判定随之偏移，噪声段残留、语音段过度抑制。",
-        "四级 gain_adjustment：维纳增益调节量继承上述偏移，最终表现为可见的衰减差异。",
-        "→ 四级量的基线形态由本节图件给出，优化后的对照见第 23 页；其中 speech_prob_mean 的 "
-        "NaN 断点属 D8（第 25 页），与 D1 传导链分开归因。",
-    ], left=0.6, top=1.45, width=12.1, size=15, height=2.3)
-    deck.picture(slide, 17, "FigT09", STRIP_IMG_BOX)
+        "修正一（D6）：它不是“无影响”，而是“改变了数值路径，但收益极小” —— 定性从“可忽略”改为“非零但可忽略”。",
+        "修正二（D6 误差量级）：0.096% 是审查报告的推算量级，本次实测未测到可归因的感知变化。",
+        "新增（D8）：审查报告未覆盖该缺陷；它是本次唯一产生可测收益的修复。",
+        "方法说明：修正以本次实测数据为准，不推翻审查报告对缺陷存在的判定。",
+    ], left=0.6, top=4.5, width=12.1, size=14, height=2.4)
     deck.footer(slide, 17)
 
 
-def p18_optimized(deck: Deck):
-    level = deck.level
-    base = deck.agg("baseline")
-    opt = deck.agg("optimized")
-    delta = _delta(opt["atten_db"] if opt else None, base["atten_db"] if base else None)
-    slide = deck.slide("优化后整体改善",
-                       "同一 harness、同一输入，只有四个开关不同；比较口径与第 13 页完全一致")
-    cards = [
-        ("优化平均衰减", ["%s dB" % fmt(opt["atten_db"] if opt else None, 3),
-                          "基线 %s dB" % fmt(base["atten_db"] if base else None, 3)],
-         COLOR_OPT),
-        ("差值", ["%s dB" % fmt(delta, 3), "优化 − 基线", "时长加权口径"], COLOR_PRIMARY),
-        ("钳位总命中", [fmt(opt["clamp_hits_total"] if opt else None),
-                        "基线 %s" % fmt(base["clamp_hits_total"] if base else None),
-                        "D5 改变量程边界"], COLOR_WARN),
-        ("RTF", [fmt(opt["rtf"] if opt else None, 4),
-                 "基线 %s" % fmt(base["rtf"] if base else None, 4), "D6 开方开销"], COLOR_GOOD),
-    ]
-    add_cards(slide, cards, top=1.45, height=1.45, title_size=15, body_size=13)
-
-    base_rows = deck.dataset.summary("baseline", level) or []
-    opt_rows = deck.dataset.summary("optimized", level) or []
-    base_map = {str(r.get("file")): r.get("atten_db") for r in base_rows}
-    opt_map = {str(r.get("file")): r.get("atten_db") for r in opt_rows}
-    files = [str(r.get("file")) for r in base_rows] or list(DD.FILE_NAMES)
-    series = [
-        ("基线", [_chart_cell(base_map.get(f)) for f in files]),
-        ("优化", [_chart_cell(opt_map.get(f)) for f in files]),
-    ]
-    add_bar_chart(slide, [f.replace(".wav", "") for f in files], series, 0.8, 3.1, 11.7, 3.2,
-                  number_format="0.00")
-    nan_hint = ("；基线中 nan 的柱为空（D8 缺陷表现，不是缺测）"
-                ) if (deck.agg("baseline") or {}).get("nan_count") else ""
-    deck.note(slide, 18, "柱状图数据内嵌自 summary_baseline_%s.csv / summary_optimized_%s.csv 的 "
-                         "atten_db 列%s；逐文件原始值见第 14 / 19 页。"
-              % (level, level, nan_hint), top=6.4, size=12)
-    deck.footer(slide, 18)
-
-
-def p19_compare_table(deck: Deck):
-    level = deck.level
-    base_rows = deck.dataset.summary("baseline", level) or []
-    opt_rows = deck.dataset.summary("optimized", level) or []
-    base_map = {str(r.get("file")): r for r in base_rows}
-    opt_map = {str(r.get("file")): r for r in opt_rows}
-    files = [str(r.get("file")) for r in base_rows] or list(DD.FILE_NAMES)
-    rows = []
-    for name in files:
-        base_row = base_map.get(name, {})
-        opt_row = opt_map.get(name, {})
-        rows.append([
-            name,
-            fmt(base_row.get("atten_db"), 3),
-            fmt(opt_row.get("atten_db"), 3),
-            fmt(_delta(opt_row.get("atten_db"), base_row.get("atten_db")), 3),
-            fmt(base_row.get("clamp_hits_total")),
-            fmt(opt_row.get("clamp_hits_total")),
-        ])
-    if not base_rows:
-        rows = [["—"] * 6 for _ in range(9)]
-    slide = deck.slide("逐文件对比（基线 vs 优化）",
-                       "差异稳定为正表示优化后抑制更强；差值列即第 18 页柱状图的高度差")
-    add_table(slide, ["文件", "基线衰减 (dB)", "优化衰减 (dB)", "差值 (dB)",
-                      "基线钳位命中", "优化钳位命中"], rows, left=0.8, top=1.45,
-              width=11.7, col_widths=[1.3, 2.1, 2.1, 1.9, 2.1, 2.2], body_size=13,
-              header_size=15, max_height=4.5, row_height=0.44)
-    nan_note = ("。基线列中的 nan 为 D8 缺陷的真实表现（第 25 页），差值列相应留空"
-                ) if (deck.agg("baseline") or {}).get("nan_count") else ""
-    deck.note(slide, 19, _data_note(deck.dataset, level) + nan_note, top=6.05, size=12)
-    deck.footer(slide, 19)
-
-
-def p20_spectrogram_optimized(deck: Deck):
-    slide = deck.slide("声谱三联对比",
-                       "原始 / 基线 / 优化：优化后谱形更贴近原始素材，噪声段残留减少")
-    deck.picture(slide, 20, "FigT05", FULL_IMG_BOX)
-    deck.footer(slide, 20)
-
-
-def p21_spectral_diff(deck: Deck):
-    slide = deck.slide("差异集中在启动期与噪声段",
-                       "基线谱 − 优化谱（dB）：差异不发生在语音主能量区，而在启动段与低语音概率段")
-    deck.picture(slide, 21, "FigT06", FULL_IMG_BOX)
-    deck.footer(slide, 21)
-
-
-def p22_waveform(deck: Deck):
-    slide = deck.slide("波形层面的改动",
-                       "全段波形差异极小；放大到 0.5 s 片段才可见幅度包络变化")
-    deck.bullets(slide, 22, [
-        "全段对比（下行）：三条波形整体重合，说明优化没有引入可听的音质突变。",
-        "放大片段（右侧，5–5.5 s）：可见基线与优化在包络上的细微差异。",
-        "波形差异小但衰减指标稳定可测 —— 这正是本次用诊断量而非听感作判据的原因。",
-    ], left=0.6, top=1.45, width=4.4, size=15, height=2.3)
-    deck.picture(slide, 22, "FigT04", (8.3, 1.45, 4.43, 2.2))
-    deck.picture(slide, 22, "FigT03", STRIP_IMG_BOX)
-    deck.footer(slide, 22)
-
-
-def p23_chain_cut(deck: Deck):
-    slide = deck.slide("D1 传导链被切断",
-                       "四联对照：signal_energy / diff_normalization / speech_prob_mean / gain_adjustment")
-    deck.bullets(slide, 23, [
-        "四张图统一口径：基线（灰）vs 优化（红），横轴为帧序号。",
-    ], left=0.6, top=1.42, width=12.1, size=15, height=0.45)
-    boxes = [
-        ("FigT07", (0.6, 1.95, 5.9, 2.2)),
-        ("FigT09", (6.85, 1.95, 5.9, 2.2)),
-        ("FigT10", (0.6, 4.25, 5.9, 2.2)),
-        ("FigT11", (6.85, 4.25, 5.9, 2.2)),
-    ]
-    for fig_id, box in boxes:
-        deck.picture(slide, 23, fig_id, box)
-    deck.note(slide, 23, "判读：signal_energy / diff_normalization / gain_adjustment 三条的启动期偏移"
-                         "同向且同源（Y[257]），修复该点即切断该传导链；speech_prob_mean 上的 NaN 断点"
-                         "属 D8（第 25 页），与 D1 传导链分开归因。", top=6.55, size=13)
-    deck.footer(slide, 23)
-
-
-def p24_ablation(deck: Deck):
-    slide = deck.slide("四项修复各自的贡献",
-                       "消融五组：基线 / +D1 / +D1D5 / +D1D5D6 / +D1D5D6+D8，同输入同口径；"
-                       "D6 的效应体现在诊断量而非衰减量（第 27 页）")
-    deck.picture(slide, 24, "FigT17", FULL_IMG_BOX)
-    deck.footer(slide, 24)
-
-
-def p25_d8(deck: Deck):
-    level = deck.level
-    slide = deck.slide("D8：本次测试最重要的发现",
-                       "fast_math.c 的 fastpow2 定义域缺陷让 NaN 进入诊断量 speech_prob_mean；"
-                       "输出音频与衰减指标仍然正常")
-    aggs = OrderedDict((variant, deck.dataset.aggregate(variant, level)) for variant in VARIANTS)
-    labels = ["基线", "+D1", "+D1D5", "+D1D5D6", "+D1D5D6+D8"]
-    values = [_chart_cell(agg["atten_db"] if agg else None) for agg in aggs.values()]
-    add_bar_chart(slide, labels, [("平均衰减 (dB)", values)], 0.8, 3.7, 11.7, 2.85,
-                  number_format="0.000")
-    nan_stats = OrderedDict((variant, deck.dataset.nan_frames(variant, level))
-                            for variant in VARIANTS)
-    seq = "、".join("%s %s" % (variant, fmt((nan_stats.get(variant) or {}).get("nan_frames")))
-                    for variant in VARIANTS)
-    files = fmt((nan_stats.get("baseline") or {}).get("files"))
-    frames = fmt((nan_stats.get("baseline") or {}).get("frames"))
-    deck.bullets(slide, 25, [
-        "现象：NaN 只出现在诊断量列 speech_prob_mean；输出音频、atten_db、in_rms / out_rms 全部正常。",
-        "根因：avg_log_lrt 超出定义域 → fastexp 得 NaN → speech_probability 为 NaN；"
-        "wiener_filter.c 的 MIN(NaN, 1.0f) 在 C 宏语义下返回 1.0f，把 NaN 挡在滤波器之外。",
-        "NaN 帧数（口径：speech_prob_mean 为 nan 的帧，%s，%s 个文件 / %s 帧）：%s。" % (
-            level, files, frames, seq),
-        "结论：D8 属于“数值失效”类缺陷，而非“量级偏差”类 —— 它不改变衰减量，"
-        "但会让该帧的诊断量完全不可用，优先级高于 D1 / D5 / D6。",
-    ], left=0.6, top=1.45, width=12.1, size=15, height=2.15)
-    deck.note(slide, 25, "柱状数据内嵌自五份 summary_<variant>_%s.csv 的 atten_db 列；"
-                         "nan 的柱留空，不伪造成 0。逐帧 NaN 数量受 D6 影响，见第 27 页。" % level,
-              top=6.62, size=12)
-    deck.footer(slide, 25)
-
-
-def p26_d1_d5(deck: Deck):
-    level = deck.level
-    base = deck.agg("baseline")
-    opt = deck.agg("optimized")
-    d1 = deck.dataset.aggregate("d1", level)
-    d1d5 = deck.dataset.aggregate("d1d5", level)
-    slide = deck.slide("D1 是衰减量的主因，D5 条件触发",
-                       "在整段衰减这一口径上 D1 贡献最大；D5 只在输出触达钳位边界时才有影响")
-    deck.picture(slide, 26, "FigT15", (0.6, 2.1, 5.9, 3.9))
-    deck.bullets(slide, 26, [
-        "D1 单开（d1 组）平均衰减 %s dB，基线 %s dB，整段口径增益 %s dB。" % (
-            fmt((d1 or {}).get("atten_db"), 3), fmt((base or {}).get("atten_db"), 3),
-            fmt(_delta((d1 or {}).get("atten_db"), (base or {}).get("atten_db")), 3)),
-        "D5 的独立贡献（d1d5 相对 d1）：%s dB，量级明显小于 D1。" % fmt(
-            _delta((d1d5 or {}).get("atten_db"), (d1 or {}).get("atten_db")), 3),
-        "钳位总命中：基线 %s，优化 %s；命中数来自 metrics 的 clamp_hits 列逐帧累加。" % (
-            fmt((base or {}).get("clamp_hits_total")), fmt((opt or {}).get("clamp_hits_total"))),
-        "D5 只改钳位上界的来源（写死 24bit → 随样本深度派生），仅在命中边界时产生分歧。",
-        "本页只讨论衰减量与钳位；D8 的 NaN 归因见第 25 页，D6 见第 27 页。",
-    ], left=6.85, top=2.15, width=5.9, size=15, height=3.8)
-    deck.note(slide, 26, "D1 / D5 的对照数据来自 d1、d1d5 两份 summary_<variant>_%s.csv。" % level,
-              top=6.3, size=13)
-    deck.footer(slide, 26)
-
-
-def p27_d6(deck: Deck):
-    level = deck.level
-    nan_stats = OrderedDict((variant, deck.dataset.nan_frames(variant, level))
-                            for variant in VARIANTS)
-    d1d5 = nan_stats.get("d1d5") or {}
-    d1d5d6 = nan_stats.get("d1d5d6") or {}
-    delta_nan = None
-    if d1d5.get("nan_frames") is not None and d1d5d6.get("nan_frames") is not None:
-        delta_nan = d1d5d6["nan_frames"] - d1d5["nan_frames"]
-    delta_text = "—" if delta_nan is None else ("%+d" % delta_nan)
-    slide = deck.slide("D6 对衰减量可忽略，但会改变诊断量轨迹",
-                       "fastsqrt → sqrtf 只改开方实现：整段衰减无可测差异；但它改变 signal_spectrum 的数值，"
-                       "NaN 的发生位置与数量随之变化")
-    rows = [
-        ["fastsqrt（基线）", "位近似开方", "幅度谱相对误差约 0.096%（固定偏置，同号）",
-         "被差分与自适应平滑吸收：整段衰减无可测差异"],
-        ["sqrtf（优化）", "精确开方", "误差降至浮点精度",
-         "每帧多 128 次开方；数值路径改变 → 诊断量轨迹平移、NaN 帧数变化"],
-    ]
-    add_table(slide, ["实现", "方式", "误差量级", "对报告结论的影响"], rows, left=0.8, top=1.5,
-              width=11.7, col_widths=[2.2, 2.0, 4.3, 3.2], body_size=12, header_size=13,
-              max_height=1.9, row_height=0.7)
-    deck.bullets(slide, 27, [
-        "对衰减量：可忽略 —— 五组整段平均衰减的相邻差异处于 0.01–0.03 dB 量级（第 24 / 26 页）。",
-        "对诊断量：不可忽略 —— NaN 帧数（口径：speech_prob_mean 为 nan 的帧，%s，%s 个文件）："
-        "打开 D6 使 NaN 帧数由 %s 变为 %s（Δ %s）；五组完整序列见第 25 页。" % (
-            level, fmt(d1d5d6.get("files") or d1d5.get("files")),
-            fmt(d1d5.get("nan_frames")), fmt(d1d5d6.get("nan_frames")), delta_text),
-        "机理：sqrtf 改变 signal_spectrum 数值 → 微移 avg_log_lrt 轨迹 → NaN 的发生位置与数量变化；"
-        "D6 是四项修复中唯一会改变 NaN 分布的一项。",
-        "与 D8 的区别：D6 是量化误差级（约 0.096% 系统性偏置），D8 是定义域缺陷级（直接产生 NaN / 符号翻转）；"
-        "量级与性质完全不同（D8 见第 25 页）。",
-        "结论：D6 保留在优化版中 —— 它不改善也不劣化衰减指标，可观测效应只体现在诊断量轨迹上。",
-    ], left=0.6, top=3.65, width=12.1, size=14, height=2.9)
-    deck.footer(slide, 27)
-
-
-def p28_reference(deck: Deck):
-    slide = deck.slide("与另一条移植路径互证",
-                       "Project/ENC_Core 参照输出与本次基线的形态对比；形态相似即互证移植未走偏。"
-                       "注：参照路径不暴露诊断量，其 speech_prob_mean 列为占位 nan，"
-                       "语义与基线的 D8 缺陷不同，勿混用")
-    deck.picture(slide, 28, "FigT20", (0.6, 1.6, 12.13, 5.3))
-    deck.footer(slide, 28)
-
-
-def p29_verification(deck: Deck):
-    slide = deck.slide("审查结论逐条验证",
-                       "逐条对照《NS移植缺陷审查报告》第 2 节结论摘要；D8 为本次测试新发现，不在该报告之列")
-    rows = [
-        ["D1", "noise_suppressor.c:297 / :342 / :370", "严重",
-         "已验证：启动期 signal_energy 偏离实测", "第 15 / 17 / 23 / 26 页"],
-        ["D2", "app_i2s.c:465-469 + :319-344", "严重",
-         "未覆盖：单线程 harness 无中断竞争", "第 30 页"],
-        ["D3", "drv_alg.c:672-676", "中等",
-         "未覆盖：属 app 层调度行为", "第 30 页"],
-        ["D5", "noise_suppressor.c:439", "轻微",
-         "已验证：钳位命中统计与边界分歧", "第 26 页"],
-        ["D6", "fast_math.c 全体", "轻微",
-         "已验证：衰减量无差异，但改变 NaN 帧数", "第 27 页"],
-        ["D8", "fast_math.c：fastpow2 定义域缺陷", "本次新发现",
-         "已验证 / 已修复：基线含 nan，optimized 消除", "第 25 / 34 页"],
-    ]
-    add_table(slide, ["编号", "代码位置", "审查级别", "本次验证状态", "依据"], rows,
-              left=0.8, top=1.45, width=11.7, col_widths=[0.8, 3.3, 1.2, 4.1, 2.3],
-              body_size=12, header_size=13, max_height=3.9, row_height=0.55)
-    deck.bullets(slide, 29, [
-        "验证状态只取三种值：已验证 / 未覆盖 / 结论修正；本表无“结论修正”项。",
-        "D8 为本次测试新发现（不来自前置审查报告），状态为“已验证 / 已修复”。",
-        "D1 的验证依赖诊断量而非听感；D5 / D6 的验证依赖消融五组与钳位统计。",
-        "未覆盖的 D2 / D3 已在第 30 页写明原因与后续验证所需条件。",
-    ], left=0.6, top=5.45, width=12.1, size=14, height=1.5)
-    deck.footer(slide, 29)
-
-
-def p30_gaps(deck: Deck):
-    slide = deck.slide("两项缺陷本次覆盖不到",
-                       "D2 / D3 均为时序与调度类缺陷，组件化测试无法覆盖，明确标注为未覆盖")
-    deck.bullets(slide, 30, [
+def p18_gaps(deck: Deck):
+    slide = deck.slide("未覆盖项：D2 / D3",
+                       "两项时序与调度类缺陷在单线程 harness 中无法复现，明确标注为未覆盖")
+    deck.bullets(slide, 18, [
         "D2（严重）：缓冲指针与处理触发不同步 —— 触发条件是 USER2 中断被 USER0 抢占"
         "（app_dma.c:247 优先级 1 vs drv_alg.c:558 优先级 2），单线程 harness 不存在该竞争。",
         "D2 需要什么：硬件上实测 Enc_Process 单次耗时分布，确认是否越过 1 ms 帧周期。",
@@ -1147,12 +948,124 @@ def p30_gaps(deck: Deck):
         "风险声明：两项均为“非崩溃、非静音”类缺陷，无法通过本次指标证伪，故不默认通过。",
         "后续验证项：板端插桩测量 Enc_Process 耗时；在 app 层恢复开关时序后重跑同一素材。",
     ], left=0.6, top=1.45, width=12.1, size=15, height=4.6)
-    deck.note(slide, 30, "本页与第 29 页、第 34 页共同构成报告的“限制声明”三处，缺一不可。",
-              top=6.3, size=13)
-    deck.footer(slide, 30)
+    deck.note(slide, 18, "本页与第 17 页（结论修正）、第 29 页（限制与假设）、第 34 页（检查方法）"
+                         "共同构成报告的“限制声明”四处，缺一不可。", top=6.3, size=13)
+    deck.footer(slide, 18)
 
 
-def p31_performance(deck: Deck):
+def p19_dnsmos_detail(deck: Deck):
+    detail = deck.dataset.dnsmos_detail() or []
+    by_variant = OrderedDict()
+    for row in detail:
+        by_variant.setdefault(row.get("variant"), {})[str(row.get("file"))] = row.get("OVRL")
+    files = list(DD.FILE_NAMES)
+    series = []
+    for variant, label in (("input", "不处理"), ("baseline", "基线"), ("optimized", "优化（含 D8）")):
+        series.append((label, [_chart_cell((by_variant.get(variant) or {}).get(f)) for f in files]))
+    slide = deck.slide("DNS-MOS 逐文件明细",
+                       "9 个文件 × 3 个关键变体的 OVRL：优化在多数文件上抬升，且逐文件离散度下降")
+    add_bar_chart(slide, files, series, 0.8, 1.55, 11.7, 4.0, number_format="0.000",
+                  data_labels=False)
+    spread = _dnsmos_cell(deck, "optimized", "OVRL_std")
+    spread_base = _dnsmos_cell(deck, "baseline", "OVRL_std")
+    deck.bullets(slide, 19, [
+        "逐文件 OVRL 来自 dnsmos/dnsmos_detail.csv（三系列 = 不处理 / 基线 / 优化）。",
+        "离散度：OVRL 标准差基线 %s → 优化 %s，逐文件表现更一致。" % (
+            fmt(spread_base, 4), fmt(spread, 4)),
+        "逐段评分为按时长分片后取均值，每文件 7–16 段，共 %s 段。" % fmt(len(detail)),
+    ], left=0.6, top=5.7, width=12.1, size=14, height=1.2)
+    deck.footer(slide, 19)
+
+
+def p20_layered_effect(deck: Deck):
+    level = deck.level
+    nan5 = deck.dataset.nan_frames("d1d5", level) or {}
+    nan6 = deck.dataset.nan_frames("d1d5d6", level) or {}
+    nan_opt = deck.dataset.nan_frames("optimized", level) or {}
+    sp5 = deck.dataset.speech_prob("d1d5d6", level) or {}
+    sp_opt = deck.dataset.speech_prob("optimized", level) or {}
+    ovrl_5 = _ovrl(deck, "d1d5")
+    ovrl_6 = _ovrl(deck, "d1d5d6")
+    ovrl_opt = _ovrl(deck, "optimized")
+    delta_6 = _delta(ovrl_6, ovrl_5)
+    delta_8 = _delta(ovrl_opt, ovrl_6)
+    rows = [
+        ["D1", "—（输出逐字节相同）", fmt(nan5.get("nan_frames")), "—", "0.0000", "无效"],
+        ["D5", "—（输出逐字节相同）", fmt(nan5.get("nan_frames")), "—", "0.0000", "无效"],
+        ["D6", "%s dB" % fmt(_delta((deck.dataset.aggregate("d1d5d6", level) or {}).get("atten_db"),
+                                    (deck.dataset.aggregate("d1d5", level) or {}).get("atten_db")), 3),
+         "%s → %s" % (fmt(nan5.get("nan_frames")), fmt(nan6.get("nan_frames"))),
+         _pct(sp5.get("share_at_one")), fmt(delta_6, 4), "极小"],
+        ["D8", "不改变衰减量（口径不变）",
+         "%s → %s" % (fmt(nan6.get("nan_frames")), fmt(nan_opt.get("nan_frames"))),
+         "%s → %s" % (_pct(sp5.get("share_at_one")), _pct(sp_opt.get("share_at_one"))),
+         fmt(delta_8, 4), "显著"],
+    ]
+    slide = deck.slide("四项修复的分层效果",
+                       "逐项增量（同一套数据、同一口径）：只有 D8 在感知质量上产生可测收益；"
+                       "各列为“加入该修复后相对上一组的增量”")
+    add_table(slide, ["修复项", "对衰减量", "对 NaN 帧数", "对 speech_prob 饱和率", "对 OVRL", "判定"],
+              rows, left=0.8, top=1.45, width=11.7,
+              col_widths=[0.9, 2.6, 2.3, 2.6, 1.9, 1.4], body_size=12, header_size=13,
+              max_height=2.4, row_height=0.48)
+    labels, values = _dns_categories_and_values(deck, "OVRL")
+    add_bar_chart(slide, labels, [("DNS-MOS OVRL", values)], 0.8, 4.00, 11.7, 2.80,
+                  number_format="0.000")
+    deck.footer(slide, 20)
+
+
+def p21_ablation(deck: Deck):
+    level = deck.level
+    nan5 = deck.dataset.nan_frames("d1d5", level) or {}
+    nan6 = deck.dataset.nan_frames("d1d5d6", level) or {}
+    nan_opt = deck.dataset.nan_frames("optimized", level) or {}
+    base = deck.agg("baseline")
+    opt = deck.agg("optimized")
+    slide = deck.slide("消融五组",
+                       "NaN 帧数 %s（+D1D5）→ %s（+D1D5D6）→ %s（含 D8）；整段衰减 %s → %s dB" % (
+                           fmt(nan5.get("nan_frames")), fmt(nan6.get("nan_frames")),
+                           fmt(nan_opt.get("nan_frames")),
+                           fmt(base["atten_db"] if base else None, 3),
+                           fmt(opt["atten_db"] if opt else None, 3)))
+    deck.picture(slide, 21, "FigT17", FULL_IMG_BOX)
+    deck.footer(slide, 21)
+
+
+def p22_diagnostics(deck: Deck):
+    slide = deck.slide("诊断量轨迹",
+                       "signal_energy / diff_normalization / gain_adjustment：基线（灰）vs 优化（红）")
+    deck.picture(slide, 22, "FigT07", (0.6, 1.5, 5.9, 2.0))
+    deck.picture(slide, 22, "FigT09", (6.85, 1.5, 5.9, 2.0))
+    deck.picture(slide, 22, "FigT11", (0.6, 3.7, 5.9, 2.0))
+    deck.bullets(slide, 22, [
+        "三条曲线的基线形态在启动期同向偏离，优化后同步归位 —— 源头是 D1 的写入点（未初始化 Y[257]）。",
+        "但这些诊断量的变化并没有传导到输出：D1 单独打开时输出 WAV 逐字节不变（第 15 页）。",
+        "speech_prob_mean 的 NaN 断点属 D8（第 14 页），与 D1 传导链分开归因，不要混淆。",
+        "结论：诊断量的“可见变化”不等于“可测收益”，判据必须落在输出与感知质量上。",
+    ], left=6.85, top=3.8, width=5.9, size=14, height=2.6)
+    deck.footer(slide, 22)
+
+
+def p23_signal(deck: Deck):
+    slide = deck.slide("信号层面：声谱与波形",
+                       "差异集中在背景噪声段，语音主能量区基本重合")
+    deck.picture(slide, 23, "FigT05", (0.6, 1.55, 5.9, 2.85))
+    deck.picture(slide, 23, "FigT06", (6.85, 1.55, 5.9, 2.85))
+    deck.picture(slide, 23, "FigT03", (0.6, 4.55, 12.13, 2.25))
+    deck.footer(slide, 23)
+
+
+def p24_reference(deck: Deck):
+    slide = deck.slide("与另一条移植路径互证",
+                       "参照路径与本次优化的感知质量同向：OVRL %s vs %s、BAK %s vs %s" % (
+                           fmt(_ovrl(deck, "reference"), 4), fmt(_ovrl(deck, "optimized"), 4),
+                           fmt(_dnsmos_cell(deck, "reference", "BAK"), 4),
+                           fmt(_dnsmos_cell(deck, "optimized", "BAK"), 4)))
+    deck.picture(slide, 24, "FigT20", FULL_IMG_BOX)
+    deck.footer(slide, 24)
+
+
+def p25_performance(deck: Deck):
     level = deck.level
     base_metrics = deck.dataset.metrics("baseline", level, "1")
     opt_metrics = deck.dataset.metrics("optimized", level, "1")
@@ -1169,79 +1082,201 @@ def p31_performance(deck: Deck):
          fmt(opt["rtf"] if opt else None, 4)],
     ]
     slide = deck.slide("性能与资源",
-                       "单帧耗时（1.wav / %s）与实时率：优化版的开方开销不构成实时性风险" % level)
-    deck.picture(slide, 31, "FigT19", (0.6, 1.5, 5.9, 4.6))
+                       "单帧耗时（1.wav / %s）与实时率：修复不构成实时性风险" % level)
+    deck.picture(slide, 25, "FigT19", (0.6, 1.5, 5.9, 4.6))
     add_table(slide, ["变体", "均值 (µs)", "P95 (µs)", "最大 (µs)", "RTF"], table_rows,
               left=6.85, top=1.6, width=5.9, col_widths=[1.0, 1.3, 1.2, 1.2, 1.2],
               body_size=12, header_size=13, max_height=1.6, row_height=0.5)
-    deck.bullets(slide, 31, [
+    deck.bullets(slide, 25, [
         "帧预算：10 ms / 帧（1 ms I2S 帧周期的 10 倍余量）。",
-        "RTF 口径：总耗时 / 音频总时长，整段聚合（第 13 / 18 页同口径）。",
+        "RTF 口径：总耗时 / 音频总时长，整段聚合（第 16 / 20 页同口径）。",
         "D6 的精确开方每帧多 128 次，落在此处的耗时分布内。",
     ], left=6.85, top=3.4, width=5.9, size=15, height=2.6)
-    deck.footer(slide, 31)
+    deck.footer(slide, 25)
 
 
-def p32_conclusion(deck: Deck):
-    base = deck.agg("baseline")
-    opt = deck.agg("optimized")
+def p26_conclusion(deck: Deck):
+    base, opt = _ovrl(deck, "baseline"), _ovrl(deck, "optimized")
+    inp = _ovrl(deck, "input")
     level = deck.level
-    base_nan = deck.dataset.nan_frames("baseline", level) or {}
-    opt_nan = deck.dataset.nan_frames("optimized", level) or {}
-    d1d5_nan = deck.dataset.nan_frames("d1d5", level) or {}
-    d1d5d6_nan = deck.dataset.nan_frames("d1d5d6", level) or {}
-    delta_nan = None
-    if d1d5_nan.get("nan_frames") is not None and d1d5d6_nan.get("nan_frames") is not None:
-        delta_nan = d1d5d6_nan["nan_frames"] - d1d5_nan["nan_frames"]
+    nan_base = deck.dataset.nan_frames("baseline", level) or {}
+    nan_opt = deck.dataset.nan_frames("optimized", level) or {}
     slide = deck.slide("结论与建议",
                        "结论可复现：同一命令、同一输入、同一开关组合，得到同一份报告")
-    deck.bullets(slide, 32, [
-        "结论一（最严重）：D8 成立 —— fast_math.c 的 fastpow2 定义域缺陷让 NaN 进入诊断量 "
-        "speech_prob_mean（%s：基线 %s 帧、optimized %s 帧，第 25 页）；"
-        "输出音频与 atten_db / in_rms / out_rms 均不受影响。" % (
-            level, fmt(base_nan.get("nan_frames")), fmt(opt_nan.get("nan_frames"))),
-        "结论二：D1 成立 —— 未初始化 Y[257] 抬高 signal_energy 并沿四级传导链影响增益；"
-        "整段平均衰减 %s → %s dB（基线 → 优化，时长加权口径）。" % (
-            fmt((base or {}).get("atten_db"), 3), fmt((opt or {}).get("atten_db"), 3)),
-        "结论三：D5 条件触发；D6 对衰减量无可测影响，但会改变诊断量轨迹"
-        "（NaN 帧数 Δ %s，第 27 页）。" % ("—" if delta_nan is None else "%+d" % delta_nan),
+    deck.bullets(slide, 26, [
+        "结论一：D8 是本次唯一产生可测收益的修复 —— NaN %s → %s 帧，OVRL %s → %s。" % (
+            fmt(nan_base.get("nan_frames")), fmt(nan_opt.get("nan_frames")),
+            fmt(_ovrl(deck, "d1d5d6"), 4), fmt(opt, 4)),
+        "结论二：D1 / D5 对输出严格为零（9/9 输出 WAV 逐字节相同，钳位 0 命中）；D6 改变输出但感知差异极小。",
+        "结论三：基线感知质量低于不处理 —— OVRL %s < %s，说明携带缺陷的降噪链路会主动降低质量。" % (
+            fmt(base, 4), fmt(inp, 4)),
         "结论四：D2 / D3 未覆盖，报告不主张“移植完全等价”，只主张“本次量测范围内等价”。",
-        "固件回接建议：D8（消除 NaN）与 D1 优先合入，D5 / D6 按需评估；"
-        "后续验证项为板端实测 Enc_Process 耗时（判定 D2）与恢复 ENC 开关时序（判定 D3）。",
+        "建议：D8 立即合入；D1 建议合入（消除未定义行为，成本低）；D5 / D6 按需评估（第 27 页）。",
     ], left=0.6, top=1.5, width=12.1, size=16, height=4.6)
-    deck.note(slide, 32, _data_note(deck.dataset, deck.level), top=6.35, size=12)
-    deck.footer(slide, 32)
+    deck.note(slide, 26, "报告口径：抑制等级 %s；DNS-MOS 与逐帧指标的口径说明见第 9 / 29 页。" % level,
+              top=6.35, size=12)
+    deck.footer(slide, 26)
 
 
-def _short(text, limit=22):
-    text = str(text)
-    return text if len(text) <= limit else text[: limit - 1] + "…"
+def p27_priority(deck: Deck):
+    level = deck.level
+    nan_opt = deck.dataset.nan_frames("optimized", level) or {}
+    nan_6 = deck.dataset.nan_frames("d1d5d6", level) or {}
+    nan_5 = deck.dataset.nan_frames("d1d5", level) or {}
+    sp5 = deck.dataset.speech_prob("d1d5d6", level) or {}
+    sp_opt = deck.dataset.speech_prob("optimized", level) or {}
+    same_d1, total_d1 = deck.dataset.wav_identical("baseline", "d1", level)
+    same_d5, total_d5 = deck.dataset.wav_identical("baseline", "d1d5", level)
+    rows = [
+        ["P0 必修", "D8（fastpow2 定义域）",
+         "NaN %s → %s 帧；饱和率 %s → %s；OVRL +%s" % (
+             fmt(nan_6.get("nan_frames")), fmt(nan_opt.get("nan_frames")),
+             _pct(sp5.get("share_at_one")), _pct(sp_opt.get("share_at_one")),
+             fmt(_delta(_ovrl(deck, "optimized"), _ovrl(deck, "d1d5d6")), 4)),
+         "立即合入：它是唯一把“诊断量失效”变回“可用”的修复"],
+        ["P1 建议修", "D1（未初始化 Y[257]）",
+         "输出 WAV %s/%s 逐字节相同（对输出零影响）" % (same_d1, total_d1),
+         "成本极低且消除未定义行为，建议合入（收益不在本次指标上）"],
+        ["P2 可选", "D6（fastsqrt 精度）",
+         "OVRL +%s；NaN 帧数 %s → %s（改变了分布）" % (
+             fmt(_delta(_ovrl(deck, "d1d5d6"), _ovrl(deck, "d1d5")), 4),
+             fmt(nan_5.get("nan_frames")), fmt(nan_6.get("nan_frames"))),
+         "按需评估：不改善衰减指标，仅改变数值路径"],
+        ["P3 低优先", "D5（钳位量程）",
+         "输出 WAV %s/%s 逐字节相同；钳位总命中 0" % (same_d5, total_d5),
+         "可延后：本次素材从未触达钳位边界"],
+        ["待验证", "D2 / D3（时序类）",
+         "需中断竞争上下文，本次未覆盖",
+         "板端插桩实测 Enc_Process 耗时后再定级"],
+    ]
+    slide = deck.slide("修复优先级（按实测效果排序）",
+                       "排序依据是可测收益与风险，而不是缺陷数量")
+    add_table(slide, ["优先级", "修复项", "实测依据", "建议"], rows, left=0.8, top=1.45,
+              width=11.7, col_widths=[1.2, 2.6, 4.6, 3.3], body_size=12, header_size=13,
+              max_height=4.2, row_height=0.72)
+    deck.note(slide, 27, "P0/P1/P2/P3 只反映“本次实测量到的收益”；D1 的未定义行为风险不体现在指标上，"
+                         "因此仍列为 P1。", top=6.35, size=12)
+    deck.footer(slide, 27)
 
 
-def p33_appendix_a(deck: Deck):
+def p28_failures(deck: Deck):
+    slide = deck.slide("失败与边界案例",
+                       "本次测试中出现的失败与边界：NaN 帧、钳位边界、变体间零差异")
+    deck.picture(slide, 28, "FigT22", (0.6, 1.5, 5.9, 3.9))
+    deck.bullets(slide, 28, [
+        "NaN：基线 481 帧的 speech_prob_mean 为 nan（D8），报告按原样保留、不替换为 0。",
+        "钳位边界：所有变体、所有文件的钳位命中均为 0 —— 本次没有触达量程边界，这本身是一条边界结论。",
+        "零差异：D1 / D5 相对基线的输出 WAV 逐字节相同，属“修复存在但输出不变”的极端情形。",
+        "饱和：基线 92.3% 的帧 speech_prob_mean ≥ 0.999，诊断量在该区间无法区分语音与噪声。",
+        "数据缺口：d1 / d1d5 / d1d5d6 缺 L0 / L1 汇总，报告统一按 %s 口径。" % deck.level,
+    ], left=6.85, top=1.6, width=5.9, size=14, height=3.9)
+    deck.note(slide, 28, "图件 FigT22 汇总失败与边界案例；本页列出口径层面的边界条件。",
+              top=6.35, size=12)
+    deck.footer(slide, 28)
+
+
+def p29_limits(deck: Deck):
+    slide = deck.slide("限制与假设",
+                       "以下条件不成立时，报告结论需要重跑；未覆盖项不默认通过")
+    deck.bullets(slide, 29, [
+        "量纲假设（2.7 节）：输入左移 8 位对齐 24bit（sample24 = int16 × 256），输出右移 8 位还原并钳位；"
+        "基于 drv_alg.c:46 的 I2S_INOUT_RESOLUTION_LEVEL (2)。若出厂固件使用其它值，基线需重跑。",
+        "评价方法限制：DNS-MOS 是无参考模型打分，不等价于听感主观评价；PESQ 因缺少干净参考不可用（第 9 页）。",
+        "测试环境限制：单线程 harness，无中断竞争与 app 层调度，因此 D2 / D3 未覆盖（第 18 页）。",
+        "数据完整性限制：d1 / d1d5 / d1d5d6 仅有 L3 数据，L0 / L1 的对照结论不适用于这三个变体。",
+        "范围限制：结论只覆盖 ENC 组件层与本次 9 个素材；不主张移植完全等价、也不主张板端等价。",
+    ], left=0.6, top=1.45, width=12.1, size=15, height=4.6)
+    deck.note(slide, 29, "本页与第 17 / 18 / 34 页共同构成限制声明；任一页的结论被引用时都必须同时引用这些边界。",
+              top=6.3, size=12)
+    deck.footer(slide, 29)
+
+
+def p30_appendix_a(deck: Deck):
     slide = deck.slide("附录 A：图件与脚本索引",
-                       "22 张图件的版位、数据源与生成脚本；全部由 ENC/Test/analysis 下的脚本产出")
+                       "23 张图件的版位、数据源与生成脚本；全部由 ENC/Test/analysis 下的脚本产出")
     items = list(FIGURE_SPECS.items())
     half = (len(items) + 1) // 2
     for chunk_index, chunk in enumerate((items[:half], items[half:])):
         rows = []
         for fig_id, spec in chunk:
-            rows.append([fig_id, _short(spec["desc"]), DD.BOX_LABEL[spec["box"]],
+            rows.append([fig_id, _short(spec["desc"], 24), DD.BOX_LABEL[spec["box"]],
                          spec["script"]])
         add_table(slide, ["编号", "内容", "版位", "生成脚本"], rows,
                   left=0.8 if chunk_index == 0 else 6.9, top=1.5, width=5.7,
                   col_widths=[0.8, 2.85, 0.75, 1.4], body_size=10, header_size=11,
-                  max_height=4.6, row_height=0.36)
-    deck.note(slide, 33, "图件完整描述与数据源见计划书 9.4 节；数据路径："
-                         "ENC/Test/data/<variant>/<level>/（metrics_<name>.csv、"
-                         "summary_<variant>_<level>.csv、<name>.wav）；报告脚本："
-                         "deck_data.py / build_deck.py / check_deck.py。", top=6.3, size=12)
+                  max_height=4.9, row_height=0.36)
+    deck.note(slide, 30, "图件完整描述与数据源见计划书 9.4 节；数据路径："
+                         "ENC/Test/data/<variant>/<level>/ 与 ENC/Test/data/dnsmos/；报告脚本："
+                         "deck_data.py / build_deck.py / check_deck.py。", top=6.45, size=12)
+    deck.footer(slide, 30)
+
+
+def p31_detail_table(deck: Deck):
+    level = deck.level
+    rows_raw = deck.dataset.summary("baseline", level)
+    rows = []
+    if rows_raw:
+        for row in rows_raw[:9]:
+            rows.append([str(row.get("file", "")), fmt(row.get("duration_s"), 2),
+                         fmt(row.get("frames")), fmt(row.get("in_rms"), 1),
+                         fmt(row.get("out_rms"), 1), fmt(row.get("atten_db"), 3),
+                         fmt(row.get("total_elapsed_ms"), 1), fmt(row.get("clamp_hits_total"))])
+    else:
+        rows = [["—"] * 8 for _ in range(9)]
+    slide = deck.slide("逐文件明细（基线）",
+                       "放大镜下的基线：这是后续一切对比的参照系")
+    add_table(slide, ["文件", "时长 (s)", "帧数", "输入 RMS", "输出 RMS", "衰减 (dB)",
+                      "总耗时 (ms)", "钳位命中"], rows, left=0.8, top=1.45, width=11.7,
+              col_widths=[1.0, 1.2, 1.2, 1.6, 1.6, 1.5, 1.6, 1.2], body_size=13,
+              header_size=15, max_height=4.5, row_height=0.44)
+    deck.note(slide, 31, "报告口径：抑制等级 %s，逐文件汇总来自 summary_<variant>_%s.csv；"
+                         "钳位命中全列为 0（第 15 页）。" % (level, level), top=6.05, size=12)
+    deck.footer(slide, 31)
+
+
+def p32_metrics(deck: Deck):
+    slide = deck.slide("附录：12 类逐帧指标定义",
+                       "列定义与测试 harness 的导出表头逐字一致，禁止写 NaN / Inf")
+    rows = [[name, kind, desc, group] for name, kind, desc, group in METRIC_TABLE]
+    add_table(slide, ["列名", "类型", "含义", "分类"], rows, left=0.8, top=1.45,
+              width=11.7, col_widths=[2.6, 1.1, 6.4, 1.6], body_size=12, header_size=13,
+              max_height=4.9, row_height=0.37)
+    deck.note(slide, 32, "数值格式：浮点 %.9g、整数 %d；实测出现的 nan 已归因到 D8（第 13 / 14 页），"
+                         "报告按原样保留、不替换为 0。", top=6.35, size=12)
+    deck.footer(slide, 32)
+
+
+def p33_dnsmos_table(deck: Deck):
+    detail = deck.dataset.dnsmos_detail() or []
+    by_variant = OrderedDict()
+    for row in detail:
+        by_variant.setdefault(row.get("variant"), {})[str(row.get("file"))] = row
+    rows = []
+    for name in DD.FILE_NAMES:
+        inp = (by_variant.get("input") or {}).get(name) or {}
+        base = (by_variant.get("baseline") or {}).get(name) or {}
+        opt = (by_variant.get("optimized") or {}).get(name) or {}
+        rows.append([
+            "%s.wav" % name,
+            fmt(inp.get("segments")),
+            fmt(inp.get("OVRL"), 4), fmt(base.get("OVRL"), 4), fmt(opt.get("OVRL"), 4),
+            fmt(_delta(opt.get("OVRL"), base.get("OVRL")), 4),
+        ])
+    if not detail:
+        rows = [["—"] * 6 for _ in DD.FILE_NAMES]
+    slide = deck.slide("附录：DNS-MOS 逐文件数据",
+                       "供复核第 19 页图表：逐文件的 OVRL 与“优化 − 基线”增量")
+    add_table(slide, ["文件", "分段数", "不处理 OVRL", "基线 OVRL", "优化 OVRL", "增量"], rows,
+              left=0.8, top=1.45, width=11.7, col_widths=[1.5, 1.2, 2.2, 2.2, 2.2, 1.9],
+              body_size=13, header_size=15, max_height=4.5, row_height=0.44)
+    deck.note(slide, 33, "数据源：ENC/Test/data/dnsmos/dnsmos_detail.csv；OVRL 为分段评分按时长加权均值。",
+              top=6.05, size=12)
     deck.footer(slide, 33)
 
 
 def p34_appendix_b(deck: Deck):
     slide = deck.slide("附录 B：检查方法与限制（强制页）",
-                       "校验范围、视觉责任归属与量纲假设；本页不允许被省略或简化")
+                       "校验范围、视觉责任归属、量纲假设与无效修复结论；本页不允许被省略或简化")
     rows = [
         ["结构校验", "check_office.py（ZIP/XML 完整性与内部关系）",
          "verdict = pass；页数 = 34", "preview/checks.json"],
@@ -1258,30 +1293,34 @@ def p34_appendix_b(deck: Deck):
     add_table(slide, ["校验类别", "工具与方法", "通过标准", "产物"], rows, left=0.8, top=1.42,
               width=11.7, col_widths=[1.1, 4.7, 3.5, 2.4], body_size=12, header_size=13,
               max_height=3.0, row_height=0.50)
-    base_nan = deck.dataset.nan_frames("baseline", deck.level) or {}
+    level = deck.level
+    nan_base = deck.dataset.nan_frames("baseline", level) or {}
+    same_d1, total_d1 = deck.dataset.wav_identical("baseline", "d1", level)
     deck.bullets(slide, 34, [
         "版式已由视觉模型完成自动检查（对 preview/page-0001..0034.png 逐页检查溢出 / 遮挡 / "
         "字号可读性 / 中文字体渲染，结论记入 _reports/visual_check.json），最终以用户审阅 "
         "preview/ 后的确认为准；本页不代表已由人工完成视觉验收。",
-        "量纲假设（2.7 节）：输入左移 8 位对齐 24bit（sample24 = int16 × 256），输出右移 8 位还原并钳位；"
-        "基于 drv_alg.c:46 的 I2S_INOUT_RESOLUTION_LEVEL (2)。若出厂固件使用其它值，基线需重跑。",
-        "基线数据中的 nan 是被测对象（固件）的固有缺陷表现（D8：fast_math.c 的 fastpow2 定义域缺陷），"
-        "只出现在诊断量列 speech_prob_mean（%s 共 %s 帧），不是测量故障；报告按原样呈现，未替换为 0。" % (
-            deck.level, fmt(base_nan.get("nan_frames"))),
-        "限制与重建：不做听感评价、不做板端时序验证；D2 / D3 未覆盖（第 30 页）；"
-        "python build_deck.py && python check_deck.py 可一键重建。",
-    ], left=0.6, top=4.50, width=12.1, size=15, height=2.45)
+        "评价方法：感知质量用 DNS-MOS 无参考模型（SIG / BAK / OVRL / P808_MOS）；"
+        "PESQ 因缺少干净参考不可用（第 9 页）。",
+        "哪些修复无效：D1 / D5 对输出零影响（输出 WAV %s/%s 逐字节相同）；D6 影响极小；"
+        "唯一有效的是 D8（第 15 / 20 / 27 页）。" % (same_d1, total_d1),
+        "量纲假设（2.7 节）：输入左移 8 位对齐 24bit，输出右移 8 位还原并钳位；基于 drv_alg.c:46 的 "
+        "I2S_INOUT_RESOLUTION_LEVEL (2)。若出厂固件使用其它值，基线需重跑。",
+        "基线 nan 是被测对象（固件）的固有缺陷表现（D8），只出现在诊断量列 speech_prob_mean"
+        "（%s 共 %s 帧），不是测量故障；报告按原样呈现，未替换为 0。" % (
+            level, fmt(nan_base.get("nan_frames"))),
+    ], left=0.6, top=4.50, width=12.1, size=14, height=2.45)
     deck.footer(slide, 34)
 
 
 PAGES = [
-    p01_cover, p02_conclusions, p03_roadmap, p04_answer, p05_component, p06_switches,
-    p07_scale, p08_dataset, p09_build, p10_pipeline, p11_metrics, p12_commands,
-    p13_baseline, p14_baseline_table, p15_startup, p16_spectrogram_base, p17_diagnostics,
-    p18_optimized, p19_compare_table, p20_spectrogram_optimized, p21_spectral_diff,
-    p22_waveform, p23_chain_cut, p24_ablation, p25_d8, p26_d1_d5, p27_d6, p28_reference,
-    p29_verification, p30_gaps, p31_performance, p32_conclusion, p33_appendix_a,
-    p34_appendix_b,
+    p01_cover, p02_answer, p03_conclusions, p04_dnsmos, p05_problems, p06_scope,
+    p07_component, p08_scale_data, p09_evaluation, p10_build, p11_reproduce,
+    p12_problem_matrix, p13_d8_root, p14_d8_scope, p15_zero_effect, p16_below_input,
+    p17_audit_revision, p18_gaps, p19_dnsmos_detail, p20_layered_effect, p21_ablation,
+    p22_diagnostics, p23_signal, p24_reference, p25_performance, p26_conclusion,
+    p27_priority, p28_failures, p29_limits, p30_appendix_a, p31_detail_table,
+    p32_metrics, p33_dnsmos_table, p34_appendix_b,
 ]
 
 
@@ -1388,6 +1427,8 @@ def main():
     print("  报告口径等级：%s" % deck.level)
     for variant, levels in deck.dataset.state().items():
         print("  %-10s %s" % (variant, dict(levels)))
+    dnsmos = deck.dataset.dnsmos_rows()
+    print("  DNS-MOS 变体 %s 个：%s" % (len(dnsmos or {}), ", ".join(list(dnsmos or []))))
     missing = deck.dataset.missing_figures()
     print("  缺失图件 %d/%d 张%s" % (len(missing), len(DD.FIGURE_IDS),
                                      ("" if not missing else "： " + ", ".join(missing[:8]))))

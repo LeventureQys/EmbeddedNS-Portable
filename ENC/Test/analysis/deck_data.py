@@ -47,6 +47,8 @@
 from __future__ import annotations
 
 import csv
+import glob
+import hashlib
 import os
 import sys
 import wave
@@ -91,6 +93,24 @@ VARIANTS = ("baseline", "d1", "d1d5", "d1d5d6", "optimized")
 PATCH_FLAG_BITS = OrderedDict([("D1", 1), ("D5", 2), ("D6", 4), ("D8", 8)])
 LEVELS = ("L0", "L1", "L3")
 FILE_NAMES = tuple(str(i) for i in range(1, 10))
+
+# --------------------------------------------------------------- DNS-MOS 感知质量
+# 数据源：<DATA_DIR>/dnsmos/dnsmos_summary.csv（7 变体 × 4 指标均值）
+#         <DATA_DIR>/dnsmos/dnsmos_detail.csv （逐文件明细）
+DNSMOS_DIR = os.path.join(DATA_DIR, "dnsmos")
+DNSMOS_SUMMARY_NAME = "dnsmos_summary.csv"
+DNSMOS_DETAIL_NAME = "dnsmos_detail.csv"
+DNSMOS_METRICS = ("SIG", "BAK", "OVRL", "P808_MOS")
+DNSMOS_VARIANTS = ("input", "baseline", "d1", "d1d5", "d1d5d6", "optimized", "reference")
+DNSMOS_LABELS = OrderedDict([
+    ("input", "不处理（原始输入）"),
+    ("baseline", "基线（对齐固件）"),
+    ("d1", "基线 + D1"),
+    ("d1d5", "基线 + D1 + D5"),
+    ("d1d5d6", "基线 + D1 + D5 + D6"),
+    ("optimized", "优化（含 D8）"),
+    ("reference", "参照路径（ENC_Core）"),
+])
 
 METRIC_COLUMNS = (
     "frame_idx",
@@ -198,6 +218,9 @@ FIGURE_SPECS = OrderedDict(
         ("FigT22", dict(file="FigT22_失败与边界案例.png", box="half",
                         desc="失败与边界案例（如出现 NaN、异常衰减、钳位超限）",
                         source="全部 CSV", script="fig_summary.py")),
+        ("FigT23", dict(file="FigT23_DNS-MOS感知质量对比.png", box="full",
+                        desc="DNS-MOS 四指标 × 7 变体的感知质量对比",
+                        source="dnsmos/dnsmos_summary.csv", script="fig_dnsmos.py")),
     ]
 )
 
@@ -277,10 +300,28 @@ def wav_path(variant: str, level: str, name: str) -> str:
 
 
 def figure_path(fig_id: str) -> str:
+    """图件路径。
+
+    ``FigT23`` 为本次新增、文件名尚未冻结：精确名不存在时按 ``FigT23_*.png`` 兜底匹配，
+    避免因命名差异退化成占位框。
+    """
     spec = FIGURE_SPECS.get(fig_id)
     if spec is None:
         return os.path.join(FIGURES_DIR, fig_id)
-    return os.path.join(FIGURES_DIR, spec["file"])
+    path = os.path.join(FIGURES_DIR, spec["file"])
+    if not os.path.isfile(path):
+        matches = sorted(glob.glob(os.path.join(FIGURES_DIR, "%s_*.png" % fig_id)))
+        if matches:
+            return matches[0]
+    return path
+
+
+def dnsmos_summary_path() -> str:
+    return os.path.join(DNSMOS_DIR, DNSMOS_SUMMARY_NAME)
+
+
+def dnsmos_detail_path() -> str:
+    return os.path.join(DNSMOS_DIR, DNSMOS_DETAIL_NAME)
 
 
 # --------------------------------------------------------------- 读取实现
@@ -355,8 +396,65 @@ def _read_build_info_file(path: str):
     return info or None
 
 
+def _read_dnsmos_summary(path: str):
+    """读 DNS-MOS 汇总 CSV → ``OrderedDict[variant] = {files, SIG, BAK, OVRL, P808_MOS, OVRL_std}``。
+
+    表头固定为 ``variant,files,SIG,BAK,OVRL,P808_MOS,OVRL_std``；缺文件返回 None。
+    """
+    if not os.path.isfile(path):
+        return None
+    rows = OrderedDict()
+    with open(path, "r", encoding="utf-8-sig", newline="") as handle:
+        reader = csv.reader(handle)
+        try:
+            header = [h.strip() for h in next(reader)]
+        except StopIteration:
+            return None
+        for raw in reader:
+            if not raw:
+                continue
+            record = {}
+            for index, name in enumerate(header):
+                value = raw[index] if index < len(raw) else ""
+                if name == "variant":
+                    record["variant"] = value.strip()
+                elif name == "files":
+                    record["files"] = _to_int(value)
+                else:
+                    record[name] = _to_float(value)
+            if record.get("variant"):
+                rows[record["variant"]] = record
+    return rows or None
+
+
+def _read_dnsmos_detail(path: str):
+    """读 DNS-MOS 逐文件 CSV → ``[{variant, file, dur_s, segments, SIG, BAK, OVRL, ...}]``。"""
+    if not os.path.isfile(path):
+        return None
+    rows = []
+    with open(path, "r", encoding="utf-8-sig", newline="") as handle:
+        reader = csv.reader(handle)
+        try:
+            header = [h.strip() for h in next(reader)]
+        except StopIteration:
+            return None
+        for raw in reader:
+            if not raw:
+                continue
+            record = {}
+            for index, name in enumerate(header):
+                value = raw[index] if index < len(raw) else ""
+                if name in ("variant", "file"):
+                    record[name] = value.strip()
+                elif name == "segments":
+                    record[name] = _to_int(value)
+                else:
+                    record[name] = _to_float(value)
+            rows.append(record)
+    return rows or None
+
+
 def read_wav_mono(path: str):
-    """读 16bit WAV → numpy int16 一维数组（多声道取左声道）。缺文件返回 None。"""
     if np is None or not os.path.isfile(path):
         return None
     try:
@@ -516,9 +614,88 @@ def count_nan_frames(variant, level, column="speech_prob_mean"):
     return {"files": files, "frames": frames, "nan_frames": nan_frames}
 
 
+def speech_prob_profile(variant, level, column="speech_prob_mean"):
+    """流式扫描 ``speech_prob_mean``：nan 帧数 + 非 nan 值的分位数与分布特征。
+
+    用于第 14 页「D8 的影响范围」：给出该列在污染帧之外的真实分布（中位、1%/99% 分位、
+    以及贴近 1.0 的样本占比），全部为实测值，不写死任何数字。
+    """
+    values = []
+    nan_frames = 0
+    frames = 0
+    files = 0
+    for name in FILE_NAMES:
+        path = metrics_path(variant, level, name)
+        if not os.path.isfile(path):
+            continue
+        with open(path, "r", encoding="utf-8-sig", newline="") as handle:
+            reader = csv.reader(handle)
+            try:
+                header = [h.strip() for h in next(reader)]
+            except StopIteration:
+                continue
+            if column not in header:
+                continue
+            index = header.index(column)
+            files += 1
+            for row in reader:
+                if not row or index >= len(row):
+                    continue
+                frames += 1
+                text = row[index].strip()
+                if "nan" in text.lower():
+                    nan_frames += 1
+                    continue
+                try:
+                    values.append(float(text))
+                except ValueError:
+                    continue
+    if not files:
+        return None
+    values.sort()
+    at_one = sum(1 for v in values if v >= 0.999)
+    return {
+        "files": files,
+        "frames": frames,
+        "nan_frames": nan_frames,
+        "valid": len(values),
+        "median": percentile(values, 0.5),
+        "p01": percentile(values, 0.01),
+        "p99": percentile(values, 0.99),
+        "min": values[0] if values else None,
+        "max": values[-1] if values else None,
+        "share_at_one": (at_one / len(values)) if values else None,
+    }
+
+
+def _file_sha256(path):
+    digest = hashlib.sha256()
+    with open(path, "rb") as handle:
+        for chunk in iter(lambda: handle.read(1 << 20), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def wav_identical_count(variant_a, variant_b, level, names=FILE_NAMES):
+    """比较两个变体在同 level 下输出 WAV 的 SHA256 → ``(相同数, 比较数)``。
+
+    用于「D1 / D5 修复效果严格为零」的逐字节证据（第 15 页），为实测而非引用。
+    """
+    same = 0
+    total = 0
+    for name in names:
+        path_a = wav_path(variant_a, level, name)
+        path_b = wav_path(variant_b, level, name)
+        if not (os.path.isfile(path_a) and os.path.isfile(path_b)):
+            continue
+        total += 1
+        if _file_sha256(path_a) == _file_sha256(path_b):
+            same += 1
+    return same, total
+
+
 # --------------------------------------------------------------- 数据集
 class Dataset:
-    """按需读取 + 缓存；所有 getter 在数据缺失时返回 None 并记录 warning。"""
 
     def __init__(self):
         self.warnings = []
@@ -527,6 +704,10 @@ class Dataset:
         self._build_info = {}
         self._wav = {}
         self._nan_frames = {}
+        self._dnsmos = None
+        self._dnsmos_detail = None
+        self._wav_identical = {}
+        self._speech_prob = {}
 
     # --- 内部
     def _warn(self, message):
@@ -582,6 +763,46 @@ class Dataset:
         if key not in self._nan_frames:
             self._nan_frames[key] = count_nan_frames(variant, level, column)
         return self._nan_frames[key]
+
+    # --- DNS-MOS 感知质量（7 变体：input / baseline / d1 / d1d5 / d1d5d6 / optimized / reference）
+    def dnsmos_rows(self):
+        """DNS-MOS 汇总表 → OrderedDict[variant] = {files, SIG, BAK, OVRL, P808_MOS, OVRL_std}。"""
+        if self._dnsmos is None:
+            rows = _read_dnsmos_summary(dnsmos_summary_path())
+            if rows is None:
+                self._warn("缺少 DNS-MOS 汇总：%s" % dnsmos_summary_path())
+            self._dnsmos = rows
+        return self._dnsmos
+
+    def dnsmos(self, variant):
+        rows = self.dnsmos_rows() or {}
+        return rows.get(variant)
+
+    def dnsmos_detail(self, variant=None):
+        """DNS-MOS 逐文件明细；给定 ``variant`` 时只返回该变体的行。"""
+        if self._dnsmos_detail is None:
+            rows = _read_dnsmos_detail(dnsmos_detail_path())
+            if rows is None:
+                self._warn("缺少 DNS-MOS 明细：%s" % dnsmos_detail_path())
+            self._dnsmos_detail = rows
+        rows = self._dnsmos_detail or []
+        if variant is None:
+            return rows
+        return [row for row in rows if row.get("variant") == variant]
+
+    def wav_identical(self, variant_a, variant_b, level):
+        """两个变体输出 WAV 的逐字节一致性 → ``(相同数, 比较数)``（结果缓存）。"""
+        key = (variant_a, variant_b, level)
+        if key not in self._wav_identical:
+            self._wav_identical[key] = wav_identical_count(variant_a, variant_b, level)
+        return self._wav_identical[key]
+
+    def speech_prob(self, variant, level):
+        """``speech_prob_mean`` 的 nan 帧数与有效值分布（结果缓存）。"""
+        key = (variant, level)
+        if key not in self._speech_prob:
+            self._speech_prob[key] = speech_prob_profile(variant, level)
+        return self._speech_prob[key]
 
     def summary_for_file(self, variant, level, name):
         rows = self.summary(variant, level)

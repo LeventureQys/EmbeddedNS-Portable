@@ -176,7 +176,7 @@ LAYOUT_OF = {
     "FigT09": "strip", "FigT10": "strip", "FigT11": "strip", "FigT12": "strip",
     "FigT13": "half", "FigT14": "half", "FigT15": "half", "FigT16": "strip",
     "FigT17": "full", "FigT18": "half", "FigT19": "half", "FigT20": "full",
-    "FigT21": "half", "FigT22": "half",
+    "FigT21": "half", "FigT22": "half", "FigT23": "full",
 }
 
 #: 必须两两不重叠的元素类型（与 `fig_style.STRICT_TYPES` 保持一致）
@@ -228,6 +228,14 @@ def overlap_report(boxes: list[dict], min_area: float = 150.0) -> list[dict]:
 
 
 def main(argv: list[str]) -> int:
+    # 控制台编码兜底：报告里含 ✗/×/² 等符号，在 GBK(936) 控制台下 `print` 会抛
+    # UnicodeEncodeError 直接打断校验（表现为"校验器崩了"而非"图件不合格"）。
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(errors="replace")
+        except (AttributeError, OSError, ValueError):
+            pass
+
     targets = argv if argv else sorted(os.listdir(K.figures_dir())) if os.path.isdir(K.figures_dir()) else []
     targets = [t for t in targets if t.lower().endswith(".png")]
     if not targets:

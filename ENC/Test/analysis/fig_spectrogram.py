@@ -93,31 +93,38 @@ def fig_t05(data: dict) -> str:
     t_end = float(max(specs[s[1]][1][-1] if specs[s[1]][1].size else 0.0 for s in SERIES))
     cbw = 84
     plot_x1 = cv.W - cv.pad_r - cbw - 46
-    top = cv.top0 + 24
-    row_gap = 26
-    bottom = cv.H - cv.bottom0
-    row_h = (bottom - top - row_gap * 2) / 3.0
-    label_h = 30
+    label_h = 34
+
+    # 垂直预算（根因 A：三行"行标题 + 刻度带 + 注释"相加超出可用高度就会互相压叠）：
+    #   ① 用 `stack_rows` 把行标题计入预算（不再让行标题落到上一行的刻度带里）；
+    #   ② x 轴三行共享同一时间列 → 只有最后一行画刻度标签与轴标题，
+    #      前两行让出的刻度带高度全部还给声谱本体。
+    rows = cv.stack_rows(3, top=cv.top0 + 10, bottom=cv.H - cv.bottom0 - 34,
+                         gap=26, caption_h=label_h,
+                         x_left=cv.pad_l, x_right=plot_x1)
 
     for i, (label, key, color, short) in enumerate(SERIES):
+        rect, cap_y = rows[i]
         f, t, db = specs[key]
-        y0 = top + i * (row_h + row_gap)
-        ax_h = row_h - label_h
-        S.caption(cv, cv.pad_l, y0 - 2, label, color=color, fnt=S.FS_LABEL)
-        ax = cv.panel(rect=(cv.pad_l, y0 + label_h, plot_x1, y0 + label_h + ax_h),
-                      ylabel="频率 (Hz)", xlabel="时间 (s)" if i == 2 else "")
-        rows = freq_band_rows(f, F_LO, F_HI)
-        ax.heatmap(db[:, rows] if db.size else np.zeros((1, 1)), vmin, vmax,
-                   cmap=S.SEQ, ext=(cv.pad_l, y0 + label_h, plot_x1, y0 + label_h + ax_h),
+        S.caption(cv, rect[0], cap_y, label, color=color, fnt=S.FS_LABEL)
+        ax = cv.panel(rect=rect, ylabel="频率 (Hz)" if i == 1 else "",
+                      xlabel="时间 (s)" if i == 2 else "")
+        # 热力图必须铺在 **Axes 实际生效的矩形**上：`panel()` 会为 x 轴刻度带与
+        # 轴标题向上收紧 y1，若沿用传入的 rect 值，热力图会铺到刻度带里面去
+        # （FigT06 下图曾因此把 x 刻度与轴标题画在差谱数据区内部）。
+        x0, y0, x1, y1 = ax.x0, ax.y0, ax.x1, ax.y1
+        band_rows = freq_band_rows(f, F_LO, F_HI)
+        ax.heatmap(db[:, band_rows] if db.size else np.zeros((1, 1)), vmin, vmax,
+                   cmap=S.SEQ, ext=(x0, y0, x1, y1),
                    x_range=(0.0, t_end), y_range=(F_LO, F_HI))
-        ax.grid(vertical=(i == 2), horizontal=True)
+        ax.grid(vertical=(i == 2), horizontal=True, xtick_labels=(i == 2))
         ax.frame()
         if i == 0:
             ax.colorbar(S.SEQ, vmin, vmax,
-                        (plot_x1 + 22, y0 + label_h + 6, plot_x1 + 58, y0 + label_h + ax_h - 6),
+                        (x1 + 22, y0 + 6, x1 + 58, y1 - 6),
                         label="相对幅度 (dB)")
 
-    cv.note("纵轴对数刻度；横轴为帧中心时间。dB 以各自全局峰值为 0 dB 参考。")
+    cv.note("纵轴对数刻度；横轴为帧中心时间；dB 以各自全局峰值为 0 dB 参考。")
     return cv.save("FigT05_声谱三联.png")
 
 
@@ -146,40 +153,45 @@ def fig_t06(data: dict, vlim: float = 12.0) -> str:
     cv = S.Canvas("full", "FigT06", "声谱差异：基线谱 − 优化谱（dB，正=基线更强）")
     cbw = 84
     plot_x1 = cv.W - cv.pad_r - cbw - 46
-    top = cv.top0 + 24 + 24
-    bottom = cv.H - cv.bottom0
-    row_gap = 30
-    row_h = (bottom - top - row_gap) / 2.0
-    label_h = 30
+    label_h = 34
+
+    # 垂直预算（与 FigT05 同源重排）：
+    #   ① 两张谱图共用同一条时间轴 → 只有下图画 x 刻度标签与轴标题，
+    #      上图让出的刻度带高度还给声谱本体；
+    #   ② 子图标题计入 `stack_rows` 预算，不再落进上图的刻度带里；
+    #   ③ 热力图的 `ext` 一律取 `Axes` **实际生效**的矩形——旧版用了传入的
+    #      未收紧矩形，把下图整排 x 刻度与「时间(s)」画进了差谱数据区内部。
+    cv.set_bottom_reserve(100)
+    stack = cv.stack_rows(2, top=cv.top0 + 10, bottom=cv.H - cv.bottom0 - 34,
+                          gap=50, caption_h=label_h,
+                          x_left=cv.pad_l, x_right=plot_x1)
 
     # 上：统一尺度的基线谱
     f_b, t_b, db_b = spectrogram_db(data["baseline"])
-    ax = cv.panel(rect=(cv.pad_l, top + label_h, plot_x1, top + label_h + row_h - label_h),
-                  ylabel="频率 (Hz)", xlabel="")
-    S.caption(cv, cv.pad_l, top - 2, "基线谱（参考尺度 −100…0 dB）", color=C.BASELINE, fnt=S.FS_LABEL)
+    rect, cap_y = stack[0]
+    S.caption(cv, rect[0], cap_y, "基线谱（参考尺度 −100…0 dB）",
+              color=C.BASELINE, fnt=S.FS_LABEL)
+    ax = cv.panel(rect=rect, ylabel="频率 (Hz)", xlabel="")
+    bx0, by0, bx1, by1 = ax.x0, ax.y0, ax.x1, ax.y1
     ax.heatmap(db_b[:, rows], -100.0, 0.0, cmap=S.SEQ,
-               ext=(cv.pad_l, top + label_h, plot_x1, top + label_h + row_h - label_h),
-               x_range=(0.0, t_end), y_range=(F_LO, F_HI))
-    ax.grid(vertical=False, horizontal=True)
+               ext=(bx0, by0, bx1, by1), x_range=(0.0, t_end), y_range=(F_LO, F_HI))
+    ax.grid(vertical=False, horizontal=True, xtick_labels=False)
     ax.frame()
     ax.colorbar(S.SEQ, -100.0, 0.0,
-                (plot_x1 + 22, top + label_h + 6, plot_x1 + 58, top + label_h + row_h - label_h - 6),
-                label="幅度 (dB)")
+                (bx1 + 22, by0 + 6, bx1 + 58, by1 - 6), label="幅度 (dB)")
 
     # 下：差值图（发散色带）
-    y0 = top + row_h + row_gap
-    ax = cv.panel(rect=(cv.pad_l, y0 + label_h, plot_x1, y0 + label_h + row_h - label_h),
-                  ylabel="频率 (Hz)", xlabel="时间 (s)")
-    S.caption(cv, cv.pad_l, y0 - 2, "差值：基线 − 优化（−12…+12 dB，白=无差异）",
+    rect, cap_y = stack[1]
+    S.caption(cv, rect[0], cap_y, "差值：基线 − 优化（−12…+12 dB，白=无差异）",
               color=C.OPTIMIZED, fnt=S.FS_LABEL)
+    ax = cv.panel(rect=rect, ylabel="频率 (Hz)", xlabel="时间 (s)")
+    bx0, by0, bx1, by1 = ax.x0, ax.y0, ax.x1, ax.y1
     ax.heatmap(diff[:, rows], -vlim, vlim, cmap=S.DIV,
-               ext=(cv.pad_l, y0 + label_h, plot_x1, y0 + label_h + row_h - label_h),
-               x_range=(0.0, t_end), y_range=(F_LO, F_HI))
+               ext=(bx0, by0, bx1, by1), x_range=(0.0, t_end), y_range=(F_LO, F_HI))
     ax.grid(vertical=True, horizontal=True)
     ax.frame()
     ax.colorbar(S.DIV, -vlim, vlim,
-                (plot_x1 + 22, y0 + label_h + 6, plot_x1 + 58, y0 + label_h + row_h - label_h - 6),
-                label="差值 (dB)")
+                (bx1 + 22, by0 + 6, bx1 + 58, by1 - 6), label="差值 (dB)")
 
     cv.note("正差值（红）表示基线在该时频点能量更强，负差值（蓝）表示优化后更强。")
     return cv.save("FigT06_声谱差异.png")
@@ -195,7 +207,7 @@ def fig_t14(data: dict, n_fft: int = 1024) -> str:
         print("SKIP FigT14 缺少数据: %s" % ", ".join(missing))
         return ""
     cv = S.Canvas("half", "FigT14", "长时平均谱 LTAS 对比")
-    band = cv.set_legend_band(2)
+    band = cv.set_legend_band(3)
     ax = cv.panel(rect=(cv.pad_l, max(cv.top0, band), cv.W - cv.pad_r, cv.H - cv.bottom0),
                   ylabel="平均电平 (dB)", xlabel="频率 (Hz)", xlog=True)
 
