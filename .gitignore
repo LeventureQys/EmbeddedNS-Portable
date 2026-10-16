@@ -50,3 +50,29 @@ enc(3).zip
 /ENC/Document/*副本.pptx
 /ENC/NS_Component/port/_compat_vectors*.txt
 /ENC/Document/figures/_*/
+
+# ---- ENC 固件工程（MainApp / Bootloader）：只提交源码与工程文件，排除编译产物 ----
+# 编译输出目录（Keil MDK）：.axf/.hex/.o/.crf/.d/.lst/.map/.htm 等均在其中
+/ENC/*/Output/
+/ENC/*/project/Listings/
+/ENC/*/project/Objects/
+# Keil 个人界面布局（文件名带用户名后缀）与调试日志
+/ENC/*/project/*.uvguix.*
+/ENC/*/project/JLinkLog.txt
+/ENC/*/project/*.dep
+# Keil / MDK / GCC 编译中间件与产物（仓库内尚无此类文件被跟踪，可安全全局排除）
+*.o
+*.crf
+*.axf
+*.dep
+*.lnp
+*.lst
+*.map
+*.iex
+*.sct.bak
+*.orig
+# 说明：不排除 *.lib —— source/ 下的 arm_cortexM4lf_math.lib、drv_alg.lib、agent.lib 等
+# 是工程依赖的预编译库（构建所必需），不是本次编译产生的中间产物。
+# 说明：不排除 *.txt —— source/ 下的 readme.txt / test_drv_readme.txt 是文档，
+# 编译产生的 .txt 全部位于已排除的 Listings/ 目录内。
+# 说明：不排除 *.bin —— ENC/Bootloader/Tools/ 下的 .bin 是发布工具的资源，非 build 输出。

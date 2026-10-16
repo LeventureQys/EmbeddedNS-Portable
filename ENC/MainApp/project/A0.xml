@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<BootConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <ConfigName>A0BootInfo</ConfigName>
+  <CodeAddress>[0x00008000]</CodeAddress>
+  <IOInfo>[P0.0, 0]</IOInfo>
+  <MemoryInfo>[0x20007FFC, 0x12345678]</MemoryInfo>
+</BootConfig>
