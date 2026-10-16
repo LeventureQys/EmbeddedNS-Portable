@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "backend": "native",
+  "rasterEngine": "libreoffice",
+  "source": "saved",
+  "inputPath": "D:\\workshop\\Github\\EmbeddedNS-Portable\\ENC\\Document\\scripts\\_smoke_out\\smoke.pptx",
+  "sourceSha256": "e57a83f599c59e43986bcdec58edfbd1c29332dadcbb5f612af9cba002f8cbfe",
+  "dpi": 144,
+  "pageCount": 4,
+  "images": [
+    {
+      "index": 1,
+      "page": 1,
+      "path": "D:\\workshop\\Github\\EmbeddedNS-Portable\\ENC\\Document\\scripts\\_smoke_out\\preview\\page-0001.png",
+      "width": 1920,
+      "height": 1081,
+      "rectangle": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720.0666666666667
+      },
+      "byteLength": 136628
+    },
+    {
+      "index": 2,
+      "page": 2,
+      "path": "D:\\workshop\\Github\\EmbeddedNS-Portable\\ENC\\Document\\scripts\\_smoke_out\\preview\\page-0002.png",
+      "width": 1920,
+      "height": 1081,
+      "rectangle": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720.0666666666667
+      },
+      "byteLength": 66221
+    }
+  ],
+  "missingFonts": []
+}

@@ -35,3 +35,17 @@ enc(3).zip
 *.filters
 /Simplify/enc_3filterbank_48K/NR/NR/Debug
 *.pdb
+
+# ---- ENC 组件化与测试（NS_Component / Test）：可由脚本重建的生成物 ----
+# 中间产物保留在文件系统里便于复核，但不入库（合计约 400 MB）
+/ENC/NS_Component/build/
+/ENC/Test/build/
+/ENC/Test/bin/
+/ENC/Test/data/
+/ENC/Test/analysis/__pycache__/
+/ENC/Test/analysis/_selftest/
+/ENC/Test/analysis/_selftest_prod/
+/ENC/Test/analysis/_selftest_deck/
+/_tmp_figcheck/
+/ENC/Document/*副本.pptx
+/ENC/NS_Component/port/_compat_vectors*.txt

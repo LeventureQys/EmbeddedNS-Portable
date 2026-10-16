@@ -1,0 +1,372 @@
+{
+  "slide_width_in": 13.333,
+  "slide_height_in": 7.5,
+  "slide_count": 34,
+  "shape_count": 152,
+  "violations": [],
+  "unknown": [],
+  "pages": [
+    {
+      "index": 1,
+      "title": "(无标题)",
+      "shapes": 3,
+      "violations": 0,
+      "max_right": 12.75,
+      "max_bottom": 7.35
+    },
+    {
+      "index": 2,
+      "title": "三项核心结论",
+      "shapes": 3,
+      "violations": 0,
+      "max_right": 12.7,
+      "max_bottom": 7.35
+    },
+    {
+      "index": 3,
+      "title": "本次测试回答了什么",
+      "shapes": 4,
+      "violations": 0,
+      "max_right": 12.7,
+      "max_bottom": 7.35
+    },
+    {
+      "index": 4,
+      "title": "一句话答案",
+      "shapes": 5,
+      "violations": 0,
+      "max_right": 12.75,
+      "max_bottom": 7.35
+    },
+    {
+      "index": 5,
+      "title": "从固件工程中摘出的独立组件",
+      "shapes": 5,
+      "violations": 0,
+      "max_right": 12.7,
+      "max_bottom": 7.35
+    },
+    {
+      "index": 6,
+      "title": "基线与优化版只差四个开关",
+      "shapes": 4,
+      "violations": 0,
+      "max_right": 12.7,
+      "max_bottom": 7.35
+    },
+    {
+      "index": 7,
+      "title": "测试量纲必须与固件一致",
+      "shapes": 4,
+      "violations": 0,
+      "max_right": 12.7,
+      "max_bottom": 7.35
+    },
+    {
+      "index": 8,
+      "title": "9 个音频、190 秒、全覆盖",
+      "shapes": 4,
+      "violations": 0,
+      "max_right": 12.7,
+      "max_bottom": 7.35
+    },
+    {
+      "index": 9,
+      "title": "构建可复现",
+      "shapes": 4,
+      "violations": 0,
+      "max_right": 12.7,
+      "max_bottom": 7.35
+    },
+    {
+      "index": 10,
+      "title": "逐帧处理，逐帧记录",
+      "shapes": 4,
+      "violations": 0,
+      "max_right": 12.7,
+      "max_bottom": 7.35
+    },
+    {
+      "index": 11,
+      "title": "12 类指标覆盖时域 / 频域 / 诊断 / 性能",
+      "shapes": 4,
+      "violations": 0,
+      "max_right": 12.7,
+      "max_bottom": 7.35
+    },
+    {
+      "index": 12,
+      "title": "一键复现",
+      "shapes": 4,
+      "violations": 0,
+      "max_right": 12.7,
+      "max_bottom": 7.35
+    },
+    {
+      "index": 13,
+      "title": "改动前的整体表现",
+      "shapes": 5,
+      "violations": 0,
+      "max_right": 12.75,
+      "max_bottom": 7.35
+    },
+    {
+      "index": 14,
+      "title": "逐文件明细（基线）",
+      "shapes": 4,
+      "violations": 0,
+      "max_right": 12.7,
+      "max_bottom": 7.35
+    },
+    {
+      "index": 15,
+      "title": "启动期的异常特征",
+      "shapes": 5,
+      "violations": 0,
+      "max_right": 12.73,
+      "max_bottom": 7.35
+    },
+    {
+      "index": 16,
+      "title": "声谱上看不出明显异常",
+      "shapes": 4,
+      "violations": 0,
+      "max_right": 12.7,
+      "max_bottom": 7.35
+    },
+    {
+      "index": 17,
+      "title": "但诊断量暴露了问题",
+      "shapes": 5,
+      "violations": 0,
+      "max_right": 12.73,
+      "max_bottom": 7.35
+    },
+    {
+      "index": 18,
+      "title": "优化后整体改善",
+      "shapes": 4,
+      "violations": 0,
+      "max_right": 12.7,
+      "max_bottom": 7.35
+    },
+    {
+      "index": 19,
+      "title": "逐文件对比（基线 vs 优化）",
+      "shapes": 4,
+      "violations": 0,
+      "max_right": 12.7,
+      "max_bottom": 7.35
+    },
+    {
+      "index": 20,
+      "title": "声谱三联对比",
+      "shapes": 4,
+      "violations": 0,
+      "max_right": 12.7,
+      "max_bottom": 7.35
+    },
+    {
+      "index": 21,
+      "title": "差异集中在启动期与噪声段",
+      "shapes": 4,
+      "violations": 0,
+      "max_right": 12.7,
+      "max_bottom": 7.35
+    },
+    {
+      "index": 22,
+      "title": "波形层面的改动",
+      "shapes": 6,
+      "violations": 0,
+      "max_right": 12.73,
+      "max_bottom": 7.35
+    },
+    {
+      "index": 23,
+      "title": "D1 传导链被切断",
+      "shapes": 9,
+      "violations": 0,
+      "max_right": 12.75,
+      "max_bottom": 7.35
+    },
+    {
+      "index": 24,
+      "title": "四项修复各自的贡献",
+      "shapes": 4,
+      "violations": 0,
+      "max_right": 12.7,
+      "max_bottom": 7.35
+    },
+    {
+      "index": 25,
+      "title": "D8：本次测试最重要的发现",
+      "shapes": 5,
+      "violations": 0,
+      "max_right": 12.7,
+      "max_bottom": 7.35
+    },
+    {
+      "index": 26,
+      "title": "D1 是衰减量的主因，D5 条件触发",
+      "shapes": 6,
+      "violations": 0,
+      "max_right": 12.75,
+      "max_bottom": 7.35
+    },
+    {
+      "index": 27,
+      "title": "D6 对衰减量可忽略，但会改变诊断量轨迹",
+      "shapes": 4,
+      "violations": 0,
+      "max_right": 12.7,
+      "max_bottom": 7.35
+    },
+    {
+      "index": 28,
+      "title": "与另一条移植路径互证",
+      "shapes": 4,
+      "violations": 0,
+      "max_right": 12.7,
+      "max_bottom": 7.35
+    },
+    {
+      "index": 29,
+      "title": "审查结论逐条验证",
+      "shapes": 4,
+      "violations": 0,
+      "max_right": 12.7,
+      "max_bottom": 7.35
+    },
+    {
+      "index": 30,
+      "title": "两项缺陷本次覆盖不到",
+      "shapes": 5,
+      "violations": 0,
+      "max_right": 12.7,
+      "max_bottom": 7.35
+    },
+    {
+      "index": 31,
+      "title": "性能与资源",
+      "shapes": 5,
+      "violations": 0,
+      "max_right": 12.75,
+      "max_bottom": 7.35
+    },
+    {
+      "index": 32,
+      "title": "结论与建议",
+      "shapes": 5,
+      "violations": 0,
+      "max_right": 12.7,
+      "max_bottom": 7.35
+    },
+    {
+      "index": 33,
+      "title": "附录 A：图件与脚本索引",
+      "shapes": 4,
+      "violations": 0,
+      "max_right": 12.7,
+      "max_bottom": 7.35
+    },
+    {
+      "index": 34,
+      "title": "附录 B：检查方法与限制（强制页）",
+      "shapes": 4,
+      "violations": 0,
+      "max_right": 12.7,
+      "max_bottom": 7.35
+    }
+  ],
+  "bullets": [
+    {
+      "slide": 1,
+      "count": 5
+    },
+    {
+      "slide": 3,
+      "count": 3
+    },
+    {
+      "slide": 4,
+      "count": 3
+    },
+    {
+      "slide": 5,
+      "count": 5
+    },
+    {
+      "slide": 6,
+      "count": 3
+    },
+    {
+      "slide": 7,
+      "count": 5
+    },
+    {
+      "slide": 9,
+      "count": 3
+    },
+    {
+      "slide": 10,
+      "count": 4
+    },
+    {
+      "slide": 12,
+      "count": 3
+    },
+    {
+      "slide": 13,
+      "count": 3
+    },
+    {
+      "slide": 15,
+      "count": 5
+    },
+    {
+      "slide": 17,
+      "count": 5
+    },
+    {
+      "slide": 22,
+      "count": 3
+    },
+    {
+      "slide": 23,
+      "count": 1
+    },
+    {
+      "slide": 25,
+      "count": 4
+    },
+    {
+      "slide": 26,
+      "count": 5
+    },
+    {
+      "slide": 27,
+      "count": 5
+    },
+    {
+      "slide": 29,
+      "count": 4
+    },
+    {
+      "slide": 30,
+      "count": 5
+    },
+    {
+      "slide": 31,
+      "count": 3
+    },
+    {
+      "slide": 32,
+      "count": 5
+    },
+    {
+      "slide": 34,
+      "count": 4
+    }
+  ]
+}
