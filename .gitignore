@@ -50,6 +50,10 @@ enc(3).zip
 /ENC/Document/*副本.pptx
 /ENC/NS_Component/port/_compat_vectors*.txt
 /ENC/Document/figures/_*/
+# 诊断程序的编译产物（可由 _build_diag.bat 重建，不入库）
+/ENC/NS_Component/port/_diag_nan.exe
+/ENC/NS_Component/port/*.obj
+/ENC/Test/analysis/fig_*_out.txt
 
 # ---- ENC 固件工程（MainApp / Bootloader）：只提交源码与工程文件，排除编译产物 ----
 # 编译输出目录（Keil MDK）：.axf/.hex/.o/.crf/.d/.lst/.map/.htm 等均在其中

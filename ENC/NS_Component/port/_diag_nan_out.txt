@@ -1,0 +1,544 @@
+﻿
+============ frames: ENC\Test\data\input_long\merged_speech_10min.wav (max_frames=200) ============
+  wav frames=30789216 ch=2 rate=48000
+[frame    0] naf=0 mismatch=0  speech_prob_mean=0.0175592527 [0x3C8FD86C]
+  scalars: prior_speech_prob=0.449999988 [0x3EE66666] gain_prior=1.22195077
+  model  : lrt=-3.93003297 flatness=0.484576851 diff=0.607244194
+  priorm : lrt=0.5 flat_thr=0.5 diff_thr=0.5 w=(1,0,0)
+  indicators: ind0=0 ind1=0.530807197 ind2=0.702232897 ind_prior=0
+  extremes: max_avg_log_lrt=-1.76660872 @bin0  inv_lrt=5.91998291 [0x40BD7080]  NaN(inv)=0 NaN(prob)=0
+  signal_spectrum          min=529.467         max=697359.8        nan=0   inf=0   neg=0   first_bad=-1
+  quantile(noise)          min=2497.812        max=3086.25         nan=0   inf=0   neg=0   first_bad=-1
+  noise_used               min=4923.174        max=119258.9        nan=0   inf=0   neg=0   first_bad=-1
+  noise_spectrum(post)     min=52.26539        max=61266.64        nan=0   inf=0   neg=0   first_bad=-1
+  prev_noise_spectrum      min=0               max=0               nan=0   inf=0   neg=0   first_bad=-1
+  post_snr                 min=0               max=4.847443        nan=0   inf=0   neg=0   first_bad=-1
+  prior_snr                min=9800            max=9800.097        nan=0   inf=0   neg=0   first_bad=-1
+  tmp1                     min=19601           max=19601.19        nan=0   inf=0   neg=0   first_bad=-1
+  tmp2                     min=0.999949        max=0.999949        nan=0   inf=0   neg=0   first_bad=-1
+  bessel_tmp               min=0.999949        max=5.847144        nan=0   inf=0   neg=0   first_bad=-1
+  avg_log_lrt(before)      min=0.5             max=0.5             nan=0   inf=0   neg=0   first_bad=-1
+  avg_log_lrt(after)       min=-4.190201       max=-1.766609       nan=0   inf=0   neg=129 first_bad=-1
+  inv_lrt(fastexp)         min=5.919983        max=62.77832        nan=0   inf=0   neg=0   first_bad=-1
+  speech_probability       min=0.01286802      max=0.1214487       nan=0   inf=0   neg=0   first_bad=-1
+  filter(post)             min=0.09            max=0.7862313       nan=0   inf=0   neg=0   first_bad=-1
+  conservative             min=26.47335        max=34867.99        nan=0   inf=0   neg=0   first_bad=-1
+[frame  170] naf=170 mismatch=0  speech_prob_mean=0.976125062 [0x3F79E355]
+  scalars: prior_speech_prob=0.949504495 [0x3F7312BA] gain_prior=0.0531753004
+  model  : lrt=6.05133057 flatness=0.147348419 diff=3.69320488
+  priorm : lrt=0.5 flat_thr=0.5 diff_thr=0.5 w=(1,0,0)
+  indicators: ind0=1 ind1=0.943811417 ind2=1 ind_prior=1
+  extremes: max_avg_log_lrt=101.256088 @bin4  inv_lrt=-1.91280553e+33 [0xF6BC9E00]  NaN(inv)=0 NaN(prob)=0
+  signal_spectrum          min=5705.387        max=7.481325e+07    nan=0   inf=0   neg=0   first_bad=-1
+  quantile(noise)          min=12499.38        max=942112          nan=0   inf=0   neg=0   first_bad=-1
+  noise_used               min=12499.38        max=942112          nan=0   inf=0   neg=0   first_bad=-1
+  noise_spectrum(post)     min=26739.15        max=1.14749e+07     nan=0   inf=0   neg=0   first_bad=-1
+  prev_noise_spectrum      min=26739.58        max=1.14749e+07     nan=0   inf=0   neg=0   first_bad=-1
+  post_snr                 min=0               max=124.8518        nan=0   inf=0   neg=0   first_bad=-1
+  prior_snr                min=0.08124642      max=40.88303        nan=0   inf=0   neg=0   first_bad=-1
+  tmp1                     min=1.162493        max=82.76605        nan=0   inf=0   neg=0   first_bad=-1
+  tmp2                     min=0.1397676       max=0.9879166       nan=0   inf=0   neg=0   first_bad=-1
+  bessel_tmp               min=0.1416189       max=122.6207        nan=0   inf=0   neg=0   first_bad=-1
+  avg_log_lrt(before)      min=-0.2721283      max=95.6947         nan=0   inf=0   neg=2   first_bad=-1
+  avg_log_lrt(after)       min=-0.2663677      max=101.2561        nan=0   inf=0   neg=3   first_bad=-1
+  inv_lrt(fastexp)         min=-1.912806e+33   max=1.324692        nan=0   inf=0   neg=1   first_bad=-1
+  speech_probability       min=-9.831487e-33   max=1               nan=0   inf=0   neg=1   first_bad=-1
+  filter(post)             min=0.09            max=0.9705332       nan=0   inf=0   neg=0   first_bad=-1
+  conservative             min=24248.39        max=1.361508e+07    nan=0   inf=0   neg=0   first_bad=-1
+[frame  171] naf=171 mismatch=0  speech_prob_mean=0.97044152 [0x3F786EDB]
+  scalars: prior_speech_prob=0.954554021 [0x3F745DA7] gain_prior=0.0476046577
+  model  : lrt=8.16381645 flatness=0.139108777 diff=3.50407505
+  priorm : lrt=0.5 flat_thr=0.5 diff_thr=0.5 w=(1,0,0)
+  indicators: ind0=1 ind1=0.947206497 ind2=1 ind_prior=1
+  extremes: max_avg_log_lrt=109.25647 @bin7  inv_lrt=-6.27461515e+29 [0xF0FD6E00]  NaN(inv)=0 NaN(prob)=0
+  signal_spectrum          min=8467.812        max=6.686994e+07    nan=0   inf=0   neg=0   first_bad=-1
+  quantile(noise)          min=12609.75        max=974560          nan=0   inf=0   neg=0   first_bad=-1
+  noise_used               min=12609.75        max=974560          nan=0   inf=0   neg=0   first_bad=-1
+  noise_spectrum(post)     min=26738.62        max=1.14749e+07     nan=0   inf=0   neg=0   first_bad=-1
+  prev_noise_spectrum      min=26739.15        max=1.14749e+07     nan=0   inf=0   neg=0   first_bad=-1
+  post_snr                 min=0               max=142.5275        nan=0   inf=0   neg=0   first_bad=-1
+  prior_snr                min=0.03078368      max=42.37385        nan=0   inf=0   neg=0   first_bad=-1
+  tmp1                     min=1.061567        max=85.7477         nan=0   inf=0   neg=0   first_bad=-1
+  tmp2                     min=0.05799119      max=0.9883367       nan=0   inf=0   neg=0   first_bad=-1
+  bessel_tmp               min=0.09083719      max=141.6106        nan=0   inf=0   neg=0   first_bad=-1
+  avg_log_lrt(before)      min=-0.2663677      max=101.2561        nan=0   inf=0   neg=3   first_bad=-1
+  avg_log_lrt(after)       min=-0.3269219      max=109.2565        nan=0   inf=0   neg=3   first_bad=-1
+  inv_lrt(fastexp)         min=-1.79661e+34    max=1.411682        nan=0   inf=0   neg=2   first_bad=-1
+  speech_probability       min=-3.34783e-29    max=1               nan=0   inf=0   neg=2   first_bad=-1
+  filter(post)             min=0.09            max=0.9718815       nan=0   inf=0   neg=0   first_bad=-1
+  conservative             min=24248.39        max=1.361508e+07    nan=0   inf=0   neg=0   first_bad=-1
+[frame  172] naf=172 mismatch=0  speech_prob_mean=0.972702026 [0x3F790300]
+  scalars: prior_speech_prob=0.959098637 [0x3F75877D] gain_prior=0.0426411815
+  model  : lrt=9.42147446 flatness=0.132568032 diff=3.20867705
+  priorm : lrt=0.5 flat_thr=0.5 diff_thr=0.5 w=(1,0,0)
+  indicators: ind0=1 ind1=0.949762762 ind2=1 ind_prior=1
+  extremes: max_avg_log_lrt=129.744125 @bin7  inv_lrt=-9.12915673e+20 [0xE245F500]  NaN(inv)=0 NaN(prob)=0
+  signal_spectrum          min=1361.486        max=5.842858e+07    nan=0   inf=0   neg=0   first_bad=-1
+  quantile(noise)          min=12719.5         max=1006824         nan=0   inf=0   neg=0   first_bad=-1
+  noise_used               min=12719.5         max=1006824         nan=0   inf=0   neg=0   first_bad=-1
+  noise_spectrum(post)     min=26738.03        max=1.14749e+07     nan=0   inf=0   neg=0   first_bad=-1
+  prev_noise_spectrum      min=26738.62        max=1.14749e+07     nan=0   inf=0   neg=0   first_bad=-1
+  post_snr                 min=0               max=155.8512        nan=0   inf=0   neg=0   first_bad=-1
+  prior_snr                min=0.02248283      max=82.55208        nan=0   inf=0   neg=0   first_bad=-1
+  tmp1                     min=1.044966        max=166.1042        nan=0   inf=0   neg=0   first_bad=-1
+  tmp2                     min=0.04302664      max=0.993979        nan=0   inf=0   neg=0   first_bad=-1
+  bessel_tmp               min=0.04302664      max=154.4433        nan=0   inf=0   neg=0   first_bad=-1
+  avg_log_lrt(before)      min=-0.3269219      max=109.2565        nan=0   inf=0   neg=3   first_bad=-1
+  avg_log_lrt(after)       min=-0.02369003     max=129.7441        nan=0   inf=0   neg=3   first_bad=-1
+  inv_lrt(fastexp)         min=-1.136756e+37   max=0.9880257       nan=0   inf=0   neg=2   first_bad=-1
+  speech_probability       min=-2.568858e-20   max=1               nan=0   inf=0   neg=2   first_bad=-1
+  filter(post)             min=0.09            max=0.9852184       nan=0   inf=0   neg=0   first_bad=-1
+  conservative             min=24248.39        max=1.393622e+07    nan=0   inf=0   neg=0   first_bad=-1
+[frame  173] naf=173 mismatch=0  speech_prob_mean=0.97360158 [0x3F793DF4]
+  scalars: prior_speech_prob=0.963188767 [0x3F76938A] gain_prior=0.038214121
+  model  : lrt=10.8568792 flatness=0.132893994 diff=2.94570994
+  priorm : lrt=0.5 flat_thr=0.5 diff_thr=0.5 w=(1,0,0)
+  indicators: ind0=1 ind1=0.949638188 ind2=1 ind_prior=1
+  extremes: max_avg_log_lrt=148.857452 @bin34  inv_lrt=-4.7833185e+12 [0xD48B3680]  NaN(inv)=0 NaN(prob)=0
+  signal_spectrum          min=14950.99        max=5.033588e+07    nan=0   inf=0   neg=0   first_bad=-1
+  quantile(noise)          min=12828.75        max=1038896         nan=0   inf=0   neg=0   first_bad=-1
+  noise_used               min=12828.75        max=1038896         nan=0   inf=0   neg=0   first_bad=-1
+  noise_spectrum(post)     min=26738.6         max=1.14749e+07     nan=0   inf=0   neg=0   first_bad=-1
+  prev_noise_spectrum      min=26738.03        max=1.14749e+07     nan=0   inf=0   neg=0   first_bad=-1
+  post_snr                 min=0               max=218.936         nan=0   inf=0   neg=0   first_bad=-1
+  prior_snr                min=0.008164468     max=96.39488        nan=0   inf=0   neg=0   first_bad=-1
+  tmp1                     min=1.016329        max=193.7898        nan=0   inf=0   neg=0   first_bad=-1
+  tmp2                     min=0.01606501      max=0.9948392       nan=0   inf=0   neg=0   first_bad=-1
+  bessel_tmp               min=0.01606501      max=218.4393        nan=0   inf=0   neg=0   first_bad=-1
+  avg_log_lrt(before)      min=-0.02369003     max=129.7441        nan=0   inf=0   neg=3   first_bad=-1
+  avg_log_lrt(after)       min=-0.4265141      max=148.8575        nan=0   inf=0   neg=3   first_bad=-1
+  inv_lrt(fastexp)         min=-6.987965e+13   max=1.554764        nan=0   inf=0   neg=2   first_bad=-1
+  speech_probability       min=-5.47075e-12    max=1               nan=0   inf=0   neg=2   first_bad=-1
+  filter(post)             min=0.09            max=0.9873675       nan=0   inf=0   neg=0   first_bad=-1
+  conservative             min=24248.39        max=1.393622e+07    nan=0   inf=0   neg=0   first_bad=-1
+[frame  174] naf=174 mismatch=0  speech_prob_mean=0.981865942 [0x3F7B5B91]
+  scalars: prior_speech_prob=0.966869891 [0x3F7784C9] gain_prior=0.034261778
+  model  : lrt=11.57197 flatness=0.129393205 diff=2.65366483
+  priorm : lrt=0.5 flat_thr=0.5 diff_thr=0.5 w=(1,0,0)
+  indicators: ind0=1 ind1=0.950960875 ind2=1 ind_prior=1
+  extremes: max_avg_log_lrt=187.176208 @bin34  inv_lrt=-0.000126633793 [0xB904C900]  NaN(inv)=0 NaN(prob)=0
+  signal_spectrum          min=2491.349        max=4.68583e+07     nan=0   inf=0   neg=0   first_bad=-1
+  quantile(noise)          min=12937.25        max=1092992         nan=0   inf=0   neg=0   first_bad=-1
+  noise_used               min=12937.25        max=1092992         nan=0   inf=0   neg=0   first_bad=-1
+  noise_spectrum(post)     min=26731.86        max=1.14749e+07     nan=0   inf=0   neg=0   first_bad=-1
+  prev_noise_spectrum      min=26738.6         max=1.14749e+07     nan=0   inf=0   neg=0   first_bad=-1
+  post_snr                 min=0               max=231.2646        nan=0   inf=0   neg=0   first_bad=-1
+  prior_snr                min=0.04230675      max=141.8255        nan=0   inf=0   neg=0   first_bad=-1
+  tmp1                     min=1.084613        max=284.651         nan=0   inf=0   neg=0   first_bad=-1
+  tmp2                     min=0.07800539      max=0.9964866       nan=0   inf=0   neg=0   first_bad=-1
+  bessel_tmp               min=0.08820041      max=230.2491        nan=0   inf=0   neg=0   first_bad=-1
+  avg_log_lrt(before)      min=-0.4265141      max=148.8575        nan=0   inf=0   neg=3   first_bad=-1
+  avg_log_lrt(after)       min=-0.2263221      max=187.1762        nan=0   inf=0   neg=4   first_bad=-1
+  inv_lrt(fastexp)         min=-1.108815e+15   max=1.267159        nan=0   inf=0   neg=2   first_bad=-1
+  speech_probability       min=-2.632274e-14   max=1.000004        nan=0   inf=0   neg=1   first_bad=-1
+  filter(post)             min=0.09            max=0.9913673       nan=0   inf=0   neg=0   first_bad=-1
+  conservative             min=24248.39        max=1.393622e+07    nan=0   inf=0   neg=0   first_bad=-1
+[frame  175] naf=175 mismatch=0  speech_prob_mean=0.982142389 [0x3F7B6DAF]
+  scalars: prior_speech_prob=0.970182896 [0x3F785DE8] gain_prior=0.0307303201
+  model  : lrt=11.8200932 flatness=0.127434894 diff=2.44707131
+  priorm : lrt=0.5 flat_thr=0.5 diff_thr=0.5 w=(1,0,0)
+  indicators: ind0=1 ind1=0.951686323 ind2=0.999999821 ind_prior=1
+  extremes: max_avg_log_lrt=197.956482 @bin34  inv_lrt=-2.88713409e-09 [0xB1466700]  NaN(inv)=0 NaN(prob)=0
+  signal_spectrum          min=2749.457        max=4.609494e+07    nan=0   inf=0   neg=0   first_bad=-1
+  quantile(noise)          min=12613.5         max=1156416         nan=0   inf=0   neg=0   first_bad=-1
+  noise_used               min=12613.5         max=1156416         nan=0   inf=0   neg=0   first_bad=-1
+  noise_spectrum(post)     min=26731.57        max=1.14749e+07     nan=0   inf=0   neg=0   first_bad=-1
+  prev_noise_spectrum      min=26731.86        max=1.14749e+07     nan=0   inf=0   neg=0   first_bad=-1
+  post_snr                 min=0               max=214.3329        nan=0   inf=0   neg=0   first_bad=-1
+  prior_snr                min=0.01080131      max=173.7757        nan=0   inf=0   neg=0   first_bad=-1
+  tmp1                     min=1.021603        max=348.5513        nan=0   inf=0   neg=0   first_bad=-1
+  tmp2                     min=0.02114374      max=0.9971307       nan=0   inf=0   neg=0   first_bad=-1
+  bessel_tmp               min=0.02114374      max=213.5533        nan=0   inf=0   neg=0   first_bad=-1
+  avg_log_lrt(before)      min=-0.2263221      max=187.1762        nan=0   inf=0   neg=4   first_bad=-1
+  avg_log_lrt(after)       min=-0.4722731      max=197.9565        nan=0   inf=0   neg=5   first_bad=-1
+  inv_lrt(fastexp)         min=-1.263981e+18   max=1.620499        nan=0   inf=0   neg=2   first_bad=-1
+  speech_probability       min=-2.574497e-17   max=1               nan=0   inf=0   neg=1   first_bad=-1
+  filter(post)             min=0.09            max=0.9929469       nan=0   inf=0   neg=0   first_bad=-1
+  conservative             min=24248.39        max=1.393622e+07    nan=0   inf=0   neg=0   first_bad=-1
+  NANEV frame=176 bins=1 list=[11]
+[frame  176] naf=176 mismatch=0  speech_prob_mean=-nan [0xFFCA2940]
+  scalars: prior_speech_prob=0.973164618 [0x3F792151] gain_prior=0.0275725443
+  model  : lrt=11.7831278 flatness=0.128852203 diff=2.35445738
+  priorm : lrt=0.5 flat_thr=0.5 diff_thr=0.5 w=(1,0,0)
+  indicators: ind0=1 ind1=0.951162338 ind2=0.999999642 ind_prior=1
+  extremes: max_avg_log_lrt=182.353195 @bin34  inv_lrt=-0.0153617859 [0xBC7BB000]  NaN(inv)=1 NaN(prob)=1
+  signal_spectrum          min=14514.16        max=4.829582e+07    nan=0   inf=0   neg=0   first_bad=-1
+  quantile(noise)          min=12622.88        max=1219456         nan=0   inf=0   neg=0   first_bad=-1
+  noise_used               min=12622.88        max=1219456         nan=0   inf=0   neg=0   first_bad=-1
+  noise_spectrum(post)     min=26734.34        max=1.14749e+07     nan=1   inf=0   neg=0   first_bad=11 [bits=0xFFCA2940]
+  prev_noise_spectrum      min=26731.57        max=1.14749e+07     nan=0   inf=0   neg=0   first_bad=-1
+  post_snr                 min=0               max=172.0127        nan=0   inf=0   neg=0   first_bad=-1
+  prior_snr                min=0.03080722      max=208.5887        nan=0   inf=0   neg=0   first_bad=-1
+  tmp1                     min=1.061614        max=418.1774        nan=0   inf=0   neg=0   first_bad=-1
+  tmp2                     min=0.05803296      max=0.9976084       nan=0   inf=0   neg=0   first_bad=-1
+  bessel_tmp               min=0.06069528      max=171.4727        nan=0   inf=0   neg=0   first_bad=-1
+  avg_log_lrt(before)      min=-0.4722731      max=197.9565        nan=0   inf=0   neg=5   first_bad=-1
+  avg_log_lrt(after)       min=-0.1816205      max=182.3532        nan=0   inf=0   neg=8   first_bad=-1
+  inv_lrt(fastexp)         min=-4.205201e+18   max=1.202942        nan=1   inf=0   neg=2   first_bad=11 [bits=0xFFCA2940]
+  speech_probability       min=-8.624549e-18   max=1.000424        nan=1   inf=0   neg=1   first_bad=11 [bits=0xFFCA2940]
+  filter(post)             min=0.09            max=0.993986        nan=0   inf=0   neg=0   first_bad=-1
+  conservative             min=24248.39        max=1.393622e+07    nan=0   inf=0   neg=0   first_bad=-1
+  *** 首次非有限值: frame=176 量=inv_lrt(fastexp) bin=11 bits=0xFFCA2940 (NaN) ***
+    bin 11 最近 8 帧轨迹(旧->新):
+      fi=169  avg_pre=0.119129032      post=9.510516      prior=1.140473      tmp1=3.28095      tmp2=0.695189     bessel=7.3067913      avg_post=3.12432003       inv=[0x3D3A0C40] prob=[0x3F7F4F8E]
+      fi=170  avg_pre=3.12432003       post=8.706104      prior=7.445808      tmp1=15.8916      tmp2=0.937068     bessel=9.0952778      avg_post=4.70810509       inv=[0x3C16CE40] prob=[0x3F7FDFF0]
+      fi=171  avg_pre=4.70810509       post=35.79926      prior=12.86287      tmp1=26.7257      tmp2=0.962579     bessel=35.422207      avg_post=18.4264374       inv=[0x323C2500] prob=[0x3F800000]
+      fi=172  avg_pre=18.4264374       post=57.42929      prior=52.76468      tmp1=106.529      tmp2=0.990612     bessel=57.88076       avg_post=35.8237572       inv=[0x25BCF480] prob=[0x3F800000]
+      fi=173  avg_pre=35.8237572       post=78.39916      prior=96.39488      tmp1=193.79       tmp2=0.994839     bessel=78.989395      avg_post=54.7823334       inv=[0x181EAA80] prob=[0x3F800000]
+      fi=174  avg_pre=54.7823334       post=89.66369      prior=141.8255      tmp1=284.651      tmp2=0.996487     bessel=90.345154      avg_post=69.7322693       inv=[0x0D6186C0] prob=[0x3F800000]
+      fi=175  avg_pre=69.7322693       post=101.2498      prior=173.7757      tmp1=348.551      tmp2=0.997131     bessel=101.95641      avg_post=82.9263611       inv=[0x03E74480] prob=[0x3F800000]
+      fi=176  avg_pre=82.9263611       post=99.64521      prior=208.5887      tmp1=418.177      tmp2=0.997608     bessel=100.40451      avg_post=88.6531982       inv=[0xFFCA2940] prob=[0xFFCA2940]
+    ---- bin 11 @ frame 176 ----
+      signal_spectrum       = 37706528 [0x4C0FD6C8]
+      quantile(noise E.)    = 374648 [0x48B6EF00]
+      noise_used(ComputeSnr)= 374648 [0x48B6EF00]
+      prev_signal_spectrum  = 36119948 [0x4C09C963]
+      prev_noise_spectrum   = 170128.766 [0x48262431]
+      filter                = 0.992946863 [0x3F7E31C4]
+      post_snr              = 99.6452103 [0x42C74A59]
+      prior_snr             = 208.588684 [0x435096B4]
+      tmp1                  = 418.177368 [0x43D116B4]
+      tmp2                  = 0.997608423 [0x3F7F6344]
+      fastlog(tmp1)         = 6.02447653 [0x40C0C883]
+      bessel_tmp            = 100.40451 [0x42C8CF1C]
+      avg_log_lrt  before   = 82.9263611 [0x42A5DA4C]
+      avg_log_lrt  after    = 88.6531982 [0x42B14E70]  (rerun 88.6531982, bit-match)
+      gain_prior            = 0.0275725443
+      inv_lrt=fastexp(-avg) = -nan [0xFFCA2940]  expf(-avg) = 3.15068647e-39
+      speech_probability    = -nan [0xFFCA2940]
+      判定: avg_log_lrt 进入本帧时有限; fastexp(有限输入) 却给出 NaN => NaN 诞生于 fastexp/fastpow2 内部(输入有限)
+    fastexp 链路:  x=-88.6531982 [0xC2B14E70]
+      fastlog2(10.0f)=3.3079834   y=fastlog2(10)*x*0.4342945=-127.362633
+      F=8388608*(y+126.9420151)=-3528384   (int32_t)F=-3528384   0xFFCA2940
+      reinterpret as float = -nan [0xFFCA2940]
+      fastexp(lib)=-nan [0xFFCA2940]  clone=-nan  expf=3.15068647e-39
+
+  *** 首次非有限值: frame=176 量=speech_probability bin=11 bits=0xFFCA2940 (NaN) ***
+    bin 11 最近 8 帧轨迹(旧->新):
+      fi=169  avg_pre=0.119129032      post=9.510516      prior=1.140473      tmp1=3.28095      tmp2=0.695189     bessel=7.3067913      avg_post=3.12432003       inv=[0x3D3A0C40] prob=[0x3F7F4F8E]
+      fi=170  avg_pre=3.12432003       post=8.706104      prior=7.445808      tmp1=15.8916      tmp2=0.937068     bessel=9.0952778      avg_post=4.70810509       inv=[0x3C16CE40] prob=[0x3F7FDFF0]
+      fi=171  avg_pre=4.70810509       post=35.79926      prior=12.86287      tmp1=26.7257      tmp2=0.962579     bessel=35.422207      avg_post=18.4264374       inv=[0x323C2500] prob=[0x3F800000]
+      fi=172  avg_pre=18.4264374       post=57.42929      prior=52.76468      tmp1=106.529      tmp2=0.990612     bessel=57.88076       avg_post=35.8237572       inv=[0x25BCF480] prob=[0x3F800000]
+      fi=173  avg_pre=35.8237572       post=78.39916      prior=96.39488      tmp1=193.79       tmp2=0.994839     bessel=78.989395      avg_post=54.7823334       inv=[0x181EAA80] prob=[0x3F800000]
+      fi=174  avg_pre=54.7823334       post=89.66369      prior=141.8255      tmp1=284.651      tmp2=0.996487     bessel=90.345154      avg_post=69.7322693       inv=[0x0D6186C0] prob=[0x3F800000]
+      fi=175  avg_pre=69.7322693       post=101.2498      prior=173.7757      tmp1=348.551      tmp2=0.997131     bessel=101.95641      avg_post=82.9263611       inv=[0x03E74480] prob=[0x3F800000]
+      fi=176  avg_pre=82.9263611       post=99.64521      prior=208.5887      tmp1=418.177      tmp2=0.997608     bessel=100.40451      avg_post=88.6531982       inv=[0xFFCA2940] prob=[0xFFCA2940]
+    ---- bin 11 @ frame 176 ----
+      signal_spectrum       = 37706528 [0x4C0FD6C8]
+      quantile(noise E.)    = 374648 [0x48B6EF00]
+      noise_used(ComputeSnr)= 374648 [0x48B6EF00]
+      prev_signal_spectrum  = 36119948 [0x4C09C963]
+      prev_noise_spectrum   = 170128.766 [0x48262431]
+      filter                = 0.992946863 [0x3F7E31C4]
+      post_snr              = 99.6452103 [0x42C74A59]
+      prior_snr             = 208.588684 [0x435096B4]
+      tmp1                  = 418.177368 [0x43D116B4]
+      tmp2                  = 0.997608423 [0x3F7F6344]
+      fastlog(tmp1)         = 6.02447653 [0x40C0C883]
+      bessel_tmp            = 100.40451 [0x42C8CF1C]
+      avg_log_lrt  before   = 82.9263611 [0x42A5DA4C]
+      avg_log_lrt  after    = 88.6531982 [0x42B14E70]  (rerun 88.6531982, bit-match)
+      gain_prior            = 0.0275725443
+      inv_lrt=fastexp(-avg) = -nan [0xFFCA2940]  expf(-avg) = 3.15068647e-39
+      speech_probability    = -nan [0xFFCA2940]
+      判定: avg_log_lrt 进入本帧时有限; fastexp(有限输入) 却给出 NaN => NaN 诞生于 fastexp/fastpow2 内部(输入有限)
+    fastexp 链路:  x=-88.6531982 [0xC2B14E70]
+      fastlog2(10.0f)=3.3079834   y=fastlog2(10)*x*0.4342945=-127.362633
+      F=8388608*(y+126.9420151)=-3528384   (int32_t)F=-3528384   0xFFCA2940
+      reinterpret as float = -nan [0xFFCA2940]
+      fastexp(lib)=-nan [0xFFCA2940]  clone=-nan  expf=3.15068647e-39
+
+[frame  177] naf=177 mismatch=0  speech_prob_mean=1 [0x3F800000]
+  scalars: prior_speech_prob=1 [0x3F800000] gain_prior=0
+  model  : lrt=-nan flatness=0.128622085 diff=2.14961672
+  priorm : lrt=0.5 flat_thr=0.5 diff_thr=0.5 w=(1,0,0)
+  indicators: ind0=-nan ind1=0.951247752 ind2=0.999998152 ind_prior=-nan
+  extremes: max_avg_log_lrt=143.919769 @bin34  inv_lrt=-6.64998376e+14 [0xD8173400]  NaN(inv)=0 NaN(prob)=0
+  signal_spectrum          min=6667.075        max=4.883209e+07    nan=0   inf=0   neg=0   first_bad=-1
+  quantile(noise)          min=10628.12        max=1282160         nan=0   inf=0   neg=0   first_bad=-1
+  noise_used               min=10628.12        max=1282160         nan=0   inf=0   neg=0   first_bad=-1
+  noise_spectrum(post)     min=26734.34        max=1.14749e+07     nan=1   inf=0   neg=0   first_bad=11 [bits=0xFFCA2940]
+  prev_noise_spectrum      min=26734.34        max=1.14749e+07     nan=1   inf=0   neg=0   first_bad=11 [bits=0xFFCA2940]
+  post_snr                 min=0               max=117.4567        nan=0   inf=0   neg=0   first_bad=-1
+  prior_snr                min=0.03339354      max=138.8558        nan=1   inf=0   neg=0   first_bad=11 [bits=0xFFCA2940]
+  tmp1                     min=1.066787        max=278.7115        nan=1   inf=0   neg=0   first_bad=11 [bits=0xFFCA2940]
+  tmp2                     min=0.06259995      max=0.9964117       nan=1   inf=0   neg=0   first_bad=11 [bits=0xFFCA2940]
+  bessel_tmp               min=0.06259995      max=114.4596        nan=1   inf=0   neg=0   first_bad=11 [bits=0xFFCA2940]
+  avg_log_lrt(before)      min=-0.1816205      max=182.3532        nan=0   inf=0   neg=8   first_bad=-1
+  avg_log_lrt(after)       min=-0.0187378      max=143.9198        nan=1   inf=0   neg=6   first_bad=11 [bits=0xFFCA2940]
+  inv_lrt(fastexp)         min=-6.704561e+23   max=0.9844666       nan=0   inf=0   neg=2   first_bad=-1
+  speech_probability       min=1               max=1               nan=0   inf=0   neg=0   first_bad=-1
+  filter(post)             min=0.09            max=1               nan=0   inf=0   neg=0   first_bad=-1
+  conservative             min=24248.39        max=1.393622e+07    nan=0   inf=0   neg=0   first_bad=-1
+  *** 首次非有限值: frame=177 量=prior_snr bin=11 bits=0xFFCA2940 (NaN) ***
+    bin 11 最近 8 帧轨迹(旧->新):
+      fi=170  avg_pre=3.12432003       post=8.706104      prior=7.445808      tmp1=15.8916      tmp2=0.937068     bessel=9.0952778      avg_post=4.70810509       inv=[0x3C16CE40] prob=[0x3F7FDFF0]
+      fi=171  avg_pre=4.70810509       post=35.79926      prior=12.86287      tmp1=26.7257      tmp2=0.962579     bessel=35.422207      avg_post=18.4264374       inv=[0x323C2500] prob=[0x3F800000]
+      fi=172  avg_pre=18.4264374       post=57.42929      prior=52.76468      tmp1=106.529      tmp2=0.990612     bessel=57.88076       avg_post=35.8237572       inv=[0x25BCF480] prob=[0x3F800000]
+      fi=173  avg_pre=35.8237572       post=78.39916      prior=96.39488      tmp1=193.79       tmp2=0.994839     bessel=78.989395      avg_post=54.7823334       inv=[0x181EAA80] prob=[0x3F800000]
+      fi=174  avg_pre=54.7823334       post=89.66369      prior=141.8255      tmp1=284.651      tmp2=0.996487     bessel=90.345154      avg_post=69.7322693       inv=[0x0D6186C0] prob=[0x3F800000]
+      fi=175  avg_pre=69.7322693       post=101.2498      prior=173.7757      tmp1=348.551      tmp2=0.997131     bessel=101.95641      avg_post=82.9263611       inv=[0x03E74480] prob=[0x3F800000]
+      fi=176  avg_pre=82.9263611       post=99.64521      prior=208.5887      tmp1=418.177      tmp2=0.997608     bessel=100.40451      avg_post=88.6531982       inv=[0xFFCA2940] prob=[0xFFCA2940]
+      fi=177  avg_pre=88.6531982       post=88.13231      prior=-nan          tmp1=-nan         tmp2=-nan         bessel=-nan           avg_post=-nan             inv=[0x80000000] prob=[0x3F800000]
+    ---- bin 11 @ frame 177 ----
+      signal_spectrum       = 35289976 [0x4C069EDE]
+      quantile(noise E.)    = 395928 [0x48C15300]
+      noise_used(ComputeSnr)= 395928 [0x48C15300]
+      prev_signal_spectrum  = 37706528 [0x4C0FD6C8]
+      prev_noise_spectrum   = -nan [0xFFCA2940]
+      filter                = 0.993985951 [0x3F7E75DD]
+      post_snr              = 88.132309 [0x42B043BE]
+      prior_snr             = -nan [0xFFCA2940]
+      tmp1                  = -nan [0xFFCA2940]
+      tmp2                  = -nan [0xFFCA2940]
+      fastlog(tmp1)         = -88.2810516 [0xC2B08FE6]
+      bessel_tmp            = -nan [0xFFCA2940]
+      avg_log_lrt  before   = 88.6531982 [0x42B14E70]
+      avg_log_lrt  after    = -nan [0xFFCA2940]  (rerun -nan, bit-match)
+      gain_prior            = 0
+      inv_lrt=fastexp(-avg) = -0 [0x80000000]  expf(-avg) = nan
+      speech_probability    = 1 [0x3F800000]
+      判定: avg_log_lrt 进入本帧时有限; fastexp(有限输入) 却给出 有限值 => NaN 未在本处产生
+
+  *** 首次非有限值: frame=177 量=tmp1 bin=11 bits=0xFFCA2940 (NaN) ***
+    bin 11 最近 8 帧轨迹(旧->新):
+      fi=170  avg_pre=3.12432003       post=8.706104      prior=7.445808      tmp1=15.8916      tmp2=0.937068     bessel=9.0952778      avg_post=4.70810509       inv=[0x3C16CE40] prob=[0x3F7FDFF0]
+      fi=171  avg_pre=4.70810509       post=35.79926      prior=12.86287      tmp1=26.7257      tmp2=0.962579     bessel=35.422207      avg_post=18.4264374       inv=[0x323C2500] prob=[0x3F800000]
+      fi=172  avg_pre=18.4264374       post=57.42929      prior=52.76468      tmp1=106.529      tmp2=0.990612     bessel=57.88076       avg_post=35.8237572       inv=[0x25BCF480] prob=[0x3F800000]
+      fi=173  avg_pre=35.8237572       post=78.39916      prior=96.39488      tmp1=193.79       tmp2=0.994839     bessel=78.989395      avg_post=54.7823334       inv=[0x181EAA80] prob=[0x3F800000]
+      fi=174  avg_pre=54.7823334       post=89.66369      prior=141.8255      tmp1=284.651      tmp2=0.996487     bessel=90.345154      avg_post=69.7322693       inv=[0x0D6186C0] prob=[0x3F800000]
+      fi=175  avg_pre=69.7322693       post=101.2498      prior=173.7757      tmp1=348.551      tmp2=0.997131     bessel=101.95641      avg_post=82.9263611       inv=[0x03E74480] prob=[0x3F800000]
+      fi=176  avg_pre=82.9263611       post=99.64521      prior=208.5887      tmp1=418.177      tmp2=0.997608     bessel=100.40451      avg_post=88.6531982       inv=[0xFFCA2940] prob=[0xFFCA2940]
+      fi=177  avg_pre=88.6531982       post=88.13231      prior=-nan          tmp1=-nan         tmp2=-nan         bessel=-nan           avg_post=-nan             inv=[0x80000000] prob=[0x3F800000]
+    ---- bin 11 @ frame 177 ----
+      signal_spectrum       = 35289976 [0x4C069EDE]
+      quantile(noise E.)    = 395928 [0x48C15300]
+      noise_used(ComputeSnr)= 395928 [0x48C15300]
+      prev_signal_spectrum  = 37706528 [0x4C0FD6C8]
+      prev_noise_spectrum   = -nan [0xFFCA2940]
+      filter                = 0.993985951 [0x3F7E75DD]
+      post_snr              = 88.132309 [0x42B043BE]
+      prior_snr             = -nan [0xFFCA2940]
+      tmp1                  = -nan [0xFFCA2940]
+      tmp2                  = -nan [0xFFCA2940]
+      fastlog(tmp1)         = -88.2810516 [0xC2B08FE6]
+      bessel_tmp            = -nan [0xFFCA2940]
+      avg_log_lrt  before   = 88.6531982 [0x42B14E70]
+      avg_log_lrt  after    = -nan [0xFFCA2940]  (rerun -nan, bit-match)
+      gain_prior            = 0
+      inv_lrt=fastexp(-avg) = -0 [0x80000000]  expf(-avg) = nan
+      speech_probability    = 1 [0x3F800000]
+      判定: avg_log_lrt 进入本帧时有限; fastexp(有限输入) 却给出 有限值 => NaN 未在本处产生
+
+  *** 首次非有限值: frame=177 量=tmp2 bin=11 bits=0xFFCA2940 (NaN) ***
+    bin 11 最近 8 帧轨迹(旧->新):
+      fi=170  avg_pre=3.12432003       post=8.706104      prior=7.445808      tmp1=15.8916      tmp2=0.937068     bessel=9.0952778      avg_post=4.70810509       inv=[0x3C16CE40] prob=[0x3F7FDFF0]
+      fi=171  avg_pre=4.70810509       post=35.79926      prior=12.86287      tmp1=26.7257      tmp2=0.962579     bessel=35.422207      avg_post=18.4264374       inv=[0x323C2500] prob=[0x3F800000]
+      fi=172  avg_pre=18.4264374       post=57.42929      prior=52.76468      tmp1=106.529      tmp2=0.990612     bessel=57.88076       avg_post=35.8237572       inv=[0x25BCF480] prob=[0x3F800000]
+      fi=173  avg_pre=35.8237572       post=78.39916      prior=96.39488      tmp1=193.79       tmp2=0.994839     bessel=78.989395      avg_post=54.7823334       inv=[0x181EAA80] prob=[0x3F800000]
+      fi=174  avg_pre=54.7823334       post=89.66369      prior=141.8255      tmp1=284.651      tmp2=0.996487     bessel=90.345154      avg_post=69.7322693       inv=[0x0D6186C0] prob=[0x3F800000]
+      fi=175  avg_pre=69.7322693       post=101.2498      prior=173.7757      tmp1=348.551      tmp2=0.997131     bessel=101.95641      avg_post=82.9263611       inv=[0x03E74480] prob=[0x3F800000]
+      fi=176  avg_pre=82.9263611       post=99.64521      prior=208.5887      tmp1=418.177      tmp2=0.997608     bessel=100.40451      avg_post=88.6531982       inv=[0xFFCA2940] prob=[0xFFCA2940]
+      fi=177  avg_pre=88.6531982       post=88.13231      prior=-nan          tmp1=-nan         tmp2=-nan         bessel=-nan           avg_post=-nan             inv=[0x80000000] prob=[0x3F800000]
+    ---- bin 11 @ frame 177 ----
+      signal_spectrum       = 35289976 [0x4C069EDE]
+      quantile(noise E.)    = 395928 [0x48C15300]
+      noise_used(ComputeSnr)= 395928 [0x48C15300]
+      prev_signal_spectrum  = 37706528 [0x4C0FD6C8]
+      prev_noise_spectrum   = -nan [0xFFCA2940]
+      filter                = 0.993985951 [0x3F7E75DD]
+      post_snr              = 88.132309 [0x42B043BE]
+      prior_snr             = -nan [0xFFCA2940]
+      tmp1                  = -nan [0xFFCA2940]
+      tmp2                  = -nan [0xFFCA2940]
+      fastlog(tmp1)         = -88.2810516 [0xC2B08FE6]
+      bessel_tmp            = -nan [0xFFCA2940]
+      avg_log_lrt  before   = 88.6531982 [0x42B14E70]
+      avg_log_lrt  after    = -nan [0xFFCA2940]  (rerun -nan, bit-match)
+      gain_prior            = 0
+      inv_lrt=fastexp(-avg) = -0 [0x80000000]  expf(-avg) = nan
+      speech_probability    = 1 [0x3F800000]
+      判定: avg_log_lrt 进入本帧时有限; fastexp(有限输入) 却给出 有限值 => NaN 未在本处产生
+
+  *** 首次非有限值: frame=177 量=bessel_tmp bin=11 bits=0xFFCA2940 (NaN) ***
+    bin 11 最近 8 帧轨迹(旧->新):
+      fi=170  avg_pre=3.12432003       post=8.706104      prior=7.445808      tmp1=15.8916      tmp2=0.937068     bessel=9.0952778      avg_post=4.70810509       inv=[0x3C16CE40] prob=[0x3F7FDFF0]
+      fi=171  avg_pre=4.70810509       post=35.79926      prior=12.86287      tmp1=26.7257      tmp2=0.962579     bessel=35.422207      avg_post=18.4264374       inv=[0x323C2500] prob=[0x3F800000]
+      fi=172  avg_pre=18.4264374       post=57.42929      prior=52.76468      tmp1=106.529      tmp2=0.990612     bessel=57.88076       avg_post=35.8237572       inv=[0x25BCF480] prob=[0x3F800000]
+      fi=173  avg_pre=35.8237572       post=78.39916      prior=96.39488      tmp1=193.79       tmp2=0.994839     bessel=78.989395      avg_post=54.7823334       inv=[0x181EAA80] prob=[0x3F800000]
+      fi=174  avg_pre=54.7823334       post=89.66369      prior=141.8255      tmp1=284.651      tmp2=0.996487     bessel=90.345154      avg_post=69.7322693       inv=[0x0D6186C0] prob=[0x3F800000]
+      fi=175  avg_pre=69.7322693       post=101.2498      prior=173.7757      tmp1=348.551      tmp2=0.997131     bessel=101.95641      avg_post=82.9263611       inv=[0x03E74480] prob=[0x3F800000]
+      fi=176  avg_pre=82.9263611       post=99.64521      prior=208.5887      tmp1=418.177      tmp2=0.997608     bessel=100.40451      avg_post=88.6531982       inv=[0xFFCA2940] prob=[0xFFCA2940]
+      fi=177  avg_pre=88.6531982       post=88.13231      prior=-nan          tmp1=-nan         tmp2=-nan         bessel=-nan           avg_post=-nan             inv=[0x80000000] prob=[0x3F800000]
+    ---- bin 11 @ frame 177 ----
+      signal_spectrum       = 35289976 [0x4C069EDE]
+      quantile(noise E.)    = 395928 [0x48C15300]
+      noise_used(ComputeSnr)= 395928 [0x48C15300]
+      prev_signal_spectrum  = 37706528 [0x4C0FD6C8]
+      prev_noise_spectrum   = -nan [0xFFCA2940]
+      filter                = 0.993985951 [0x3F7E75DD]
+      post_snr              = 88.132309 [0x42B043BE]
+      prior_snr             = -nan [0xFFCA2940]
+      tmp1                  = -nan [0xFFCA2940]
+      tmp2                  = -nan [0xFFCA2940]
+      fastlog(tmp1)         = -88.2810516 [0xC2B08FE6]
+      bessel_tmp            = -nan [0xFFCA2940]
+      avg_log_lrt  before   = 88.6531982 [0x42B14E70]
+      avg_log_lrt  after    = -nan [0xFFCA2940]  (rerun -nan, bit-match)
+      gain_prior            = 0
+      inv_lrt=fastexp(-avg) = -0 [0x80000000]  expf(-avg) = nan
+      speech_probability    = 1 [0x3F800000]
+      判定: avg_log_lrt 进入本帧时有限; fastexp(有限输入) 却给出 有限值 => NaN 未在本处产生
+
+  *** 首次非有限值: frame=177 量=avg_log_lrt bin=11 bits=0xFFCA2940 (NaN) ***
+    bin 11 最近 8 帧轨迹(旧->新):
+      fi=170  avg_pre=3.12432003       post=8.706104      prior=7.445808      tmp1=15.8916      tmp2=0.937068     bessel=9.0952778      avg_post=4.70810509       inv=[0x3C16CE40] prob=[0x3F7FDFF0]
+      fi=171  avg_pre=4.70810509       post=35.79926      prior=12.86287      tmp1=26.7257      tmp2=0.962579     bessel=35.422207      avg_post=18.4264374       inv=[0x323C2500] prob=[0x3F800000]
+      fi=172  avg_pre=18.4264374       post=57.42929      prior=52.76468      tmp1=106.529      tmp2=0.990612     bessel=57.88076       avg_post=35.8237572       inv=[0x25BCF480] prob=[0x3F800000]
+      fi=173  avg_pre=35.8237572       post=78.39916      prior=96.39488      tmp1=193.79       tmp2=0.994839     bessel=78.989395      avg_post=54.7823334       inv=[0x181EAA80] prob=[0x3F800000]
+      fi=174  avg_pre=54.7823334       post=89.66369      prior=141.8255      tmp1=284.651      tmp2=0.996487     bessel=90.345154      avg_post=69.7322693       inv=[0x0D6186C0] prob=[0x3F800000]
+      fi=175  avg_pre=69.7322693       post=101.2498      prior=173.7757      tmp1=348.551      tmp2=0.997131     bessel=101.95641      avg_post=82.9263611       inv=[0x03E74480] prob=[0x3F800000]
+      fi=176  avg_pre=82.9263611       post=99.64521      prior=208.5887      tmp1=418.177      tmp2=0.997608     bessel=100.40451      avg_post=88.6531982       inv=[0xFFCA2940] prob=[0xFFCA2940]
+      fi=177  avg_pre=88.6531982       post=88.13231      prior=-nan          tmp1=-nan         tmp2=-nan         bessel=-nan           avg_post=-nan             inv=[0x80000000] prob=[0x3F800000]
+    ---- bin 11 @ frame 177 ----
+      signal_spectrum       = 35289976 [0x4C069EDE]
+      quantile(noise E.)    = 395928 [0x48C15300]
+      noise_used(ComputeSnr)= 395928 [0x48C15300]
+      prev_signal_spectrum  = 37706528 [0x4C0FD6C8]
+      prev_noise_spectrum   = -nan [0xFFCA2940]
+      filter                = 0.993985951 [0x3F7E75DD]
+      post_snr              = 88.132309 [0x42B043BE]
+      prior_snr             = -nan [0xFFCA2940]
+      tmp1                  = -nan [0xFFCA2940]
+      tmp2                  = -nan [0xFFCA2940]
+      fastlog(tmp1)         = -88.2810516 [0xC2B08FE6]
+      bessel_tmp            = -nan [0xFFCA2940]
+      avg_log_lrt  before   = 88.6531982 [0x42B14E70]
+      avg_log_lrt  after    = -nan [0xFFCA2940]  (rerun -nan, bit-match)
+      gain_prior            = 0
+      inv_lrt=fastexp(-avg) = -0 [0x80000000]  expf(-avg) = nan
+      speech_probability    = 1 [0x3F800000]
+      判定: avg_log_lrt 进入本帧时有限; fastexp(有限输入) 却给出 有限值 => NaN 未在本处产生
+
+  *** 首次非有限值: frame=177 量=avg_log_lrt_rerun bin=11 bits=0xFFCA2940 (NaN) ***
+    bin 11 最近 8 帧轨迹(旧->新):
+      fi=170  avg_pre=3.12432003       post=8.706104      prior=7.445808      tmp1=15.8916      tmp2=0.937068     bessel=9.0952778      avg_post=4.70810509       inv=[0x3C16CE40] prob=[0x3F7FDFF0]
+      fi=171  avg_pre=4.70810509       post=35.79926      prior=12.86287      tmp1=26.7257      tmp2=0.962579     bessel=35.422207      avg_post=18.4264374       inv=[0x323C2500] prob=[0x3F800000]
+      fi=172  avg_pre=18.4264374       post=57.42929      prior=52.76468      tmp1=106.529      tmp2=0.990612     bessel=57.88076       avg_post=35.8237572       inv=[0x25BCF480] prob=[0x3F800000]
+      fi=173  avg_pre=35.8237572       post=78.39916      prior=96.39488      tmp1=193.79       tmp2=0.994839     bessel=78.989395      avg_post=54.7823334       inv=[0x181EAA80] prob=[0x3F800000]
+      fi=174  avg_pre=54.7823334       post=89.66369      prior=141.8255      tmp1=284.651      tmp2=0.996487     bessel=90.345154      avg_post=69.7322693       inv=[0x0D6186C0] prob=[0x3F800000]
+      fi=175  avg_pre=69.7322693       post=101.2498      prior=173.7757      tmp1=348.551      tmp2=0.997131     bessel=101.95641      avg_post=82.9263611       inv=[0x03E74480] prob=[0x3F800000]
+      fi=176  avg_pre=82.9263611       post=99.64521      prior=208.5887      tmp1=418.177      tmp2=0.997608     bessel=100.40451      avg_post=88.6531982       inv=[0xFFCA2940] prob=[0xFFCA2940]
+      fi=177  avg_pre=88.6531982       post=88.13231      prior=-nan          tmp1=-nan         tmp2=-nan         bessel=-nan           avg_post=-nan             inv=[0x80000000] prob=[0x3F800000]
+    ---- bin 11 @ frame 177 ----
+      signal_spectrum       = 35289976 [0x4C069EDE]
+      quantile(noise E.)    = 395928 [0x48C15300]
+      noise_used(ComputeSnr)= 395928 [0x48C15300]
+      prev_signal_spectrum  = 37706528 [0x4C0FD6C8]
+      prev_noise_spectrum   = -nan [0xFFCA2940]
+      filter                = 0.993985951 [0x3F7E75DD]
+      post_snr              = 88.132309 [0x42B043BE]
+      prior_snr             = -nan [0xFFCA2940]
+      tmp1                  = -nan [0xFFCA2940]
+      tmp2                  = -nan [0xFFCA2940]
+      fastlog(tmp1)         = -88.2810516 [0xC2B08FE6]
+      bessel_tmp            = -nan [0xFFCA2940]
+      avg_log_lrt  before   = 88.6531982 [0x42B14E70]
+      avg_log_lrt  after    = -nan [0xFFCA2940]  (rerun -nan, bit-match)
+      gain_prior            = 0
+      inv_lrt=fastexp(-avg) = -0 [0x80000000]  expf(-avg) = nan
+      speech_probability    = 1 [0x3F800000]
+      判定: avg_log_lrt 进入本帧时有限; fastexp(有限输入) 却给出 有限值 => NaN 未在本处产生
+
+[frame  178] naf=178 mismatch=0  speech_prob_mean=1 [0x3F800000]
+  scalars: prior_speech_prob=1 [0x3F800000] gain_prior=0
+  model  : lrt=-nan flatness=0.13195309 diff=1.9479959
+  priorm : lrt=0.5 flat_thr=0.5 diff_thr=0.5 w=(1,0,0)
+  indicators: ind0=-nan ind1=0.949996948 ind2=0.999990702 ind_prior=-nan
+  extremes: max_avg_log_lrt=121.351974 @bin34  inv_lrt=-3.87591918e+24 [0xE84D3080]  NaN(inv)=0 NaN(prob)=0
+  signal_spectrum          min=6295.985        max=4.687726e+07    nan=0   inf=0   neg=0   first_bad=-1
+  quantile(noise)          min=11289.25        max=1344512         nan=0   inf=0   neg=0   first_bad=-1
+  noise_used               min=11289.25        max=1344512         nan=0   inf=0   neg=0   first_bad=-1
+  noise_spectrum(post)     min=26734.34        max=1.14749e+07     nan=1   inf=0   neg=0   first_bad=11 [bits=0xFFCA2940]
+  prev_noise_spectrum      min=26734.34        max=1.14749e+07     nan=1   inf=0   neg=0   first_bad=11 [bits=0xFFCA2940]
+  post_snr                 min=0               max=110.7544        nan=0   inf=0   neg=0   first_bad=-1
+  prior_snr                min=0.01632807      max=85.88425        nan=1   inf=0   neg=0   first_bad=11 [bits=0xFFCA2940]
+  tmp1                     min=1.032656        max=172.7685        nan=1   inf=0   neg=0   first_bad=11 [bits=0xFFCA2940]
+  tmp2                     min=0.03162038      max=0.9942113       nan=1   inf=0   neg=0   first_bad=11 [bits=0xFFCA2940]
+  bessel_tmp               min=0.03162038      max=107.4783        nan=1   inf=0   neg=0   first_bad=11 [bits=0xFFCA2940]
+  avg_log_lrt(before)      min=-0.0187378      max=143.9198        nan=1   inf=0   neg=6   first_bad=11 [bits=0xFFCA2940]
+  avg_log_lrt(after)       min=-0.444949       max=121.352         nan=1   inf=0   neg=12  first_bad=11 [bits=0xFFCA2940]
+  inv_lrt(fastexp)         min=-2.923133e+38   max=1.581245        nan=0   inf=0   neg=3   first_bad=-1
+  speech_probability       min=1               max=1               nan=0   inf=0   neg=0   first_bad=-1
+  filter(post)             min=0.09            max=1               nan=0   inf=0   neg=0   first_bad=-1
+  conservative             min=24248.39        max=1.393622e+07    nan=0   inf=0   neg=0   first_bad=-1
+[frame  179] naf=179 mismatch=0  speech_prob_mean=1 [0x3F800000]
+  scalars: prior_speech_prob=1 [0x3F800000] gain_prior=0
+  model  : lrt=-nan flatness=0.134010509 diff=1.7512027
+  priorm : lrt=0.5 flat_thr=0.5 diff_thr=0.5 w=(1,0,0)
+  indicators: ind0=-nan ind1=0.949209332 ind2=0.999955058 ind_prior=-nan
+  extremes: max_avg_log_lrt=107.465012 @bin34  inv_lrt=-3.93881572e+30 [0xF246DC00]  NaN(inv)=0 NaN(prob)=0
+  signal_spectrum          min=3583.352        max=4.722242e+07    nan=0   inf=0   neg=0   first_bad=-1
+  quantile(noise)          min=9316.875        max=1406496         nan=0   inf=0   neg=0   first_bad=-1
+  noise_used               min=9316.875        max=1406496         nan=0   inf=0   neg=0   first_bad=-1
+  noise_spectrum(post)     min=26734.34        max=1.14749e+07     nan=1   inf=0   neg=0   first_bad=11 [bits=0xFFCA2940]
+  prev_noise_spectrum      min=26734.34        max=1.14749e+07     nan=1   inf=0   neg=0   first_bad=11 [bits=0xFFCA2940]
+  post_snr                 min=0               max=100.8968        nan=0   inf=0   neg=0   first_bad=-1
+  prior_snr                min=0.02185532      max=71.66067        nan=1   inf=0   neg=0   first_bad=11 [bits=0xFFCA2940]
+  tmp1                     min=1.043711        max=144.3213        nan=1   inf=0   neg=0   first_bad=11 [bits=0xFFCA2940]
+  tmp2                     min=0.04187603      max=0.9930703       nan=1   inf=0   neg=0   first_bad=11 [bits=0xFFCA2940]
+  bessel_tmp               min=0.04187603      max=97.83187        nan=1   inf=0   neg=0   first_bad=11 [bits=0xFFCA2940]
+  avg_log_lrt(before)      min=-0.444949       max=121.352         nan=1   inf=0   neg=12  first_bad=11 [bits=0xFFCA2940]
+  avg_log_lrt(after)       min=-0.5776361      max=107.465         nan=1   inf=0   neg=12  first_bad=11 [bits=0xFFCA2940]
+  inv_lrt(fastexp)         min=-1.077453e+32   max=1.771873        nan=0   inf=0   neg=2   first_bad=-1
+  speech_probability       min=1               max=1               nan=0   inf=0   neg=0   first_bad=-1
+  filter(post)             min=0.09            max=1               nan=0   inf=0   neg=0   first_bad=-1
+  conservative             min=24248.39        max=1.393622e+07    nan=0   inf=0   neg=0   first_bad=-1
+[frame  180] naf=180 mismatch=0  speech_prob_mean=1 [0x3F800000]
+  scalars: prior_speech_prob=1 [0x3F800000] gain_prior=0
+  model  : lrt=-nan flatness=0.131759301 diff=1.53438878
+  priorm : lrt=0.5 flat_thr=0.5 diff_thr=0.5 w=(1,0,0)
+  indicators: ind0=-nan ind1=0.95007056 ind2=0.99974525 ind_prior=-nan
+  extremes: max_avg_log_lrt=94.5245514 @bin34  inv_lrt=-1.52111987e+36 [0xFB927A80]  NaN(inv)=0 NaN(prob)=0
+  signal_spectrum          min=9494.109        max=5.046782e+07    nan=0   inf=0   neg=0   first_bad=-1
+  quantile(noise)          min=9970.625        max=1468160         nan=0   inf=0   neg=0   first_bad=-1
+  noise_used               min=9970.625        max=1468160         nan=0   inf=0   neg=0   first_bad=-1
+  noise_spectrum(post)     min=26734.34        max=1.14749e+07     nan=1   inf=0   neg=0   first_bad=11 [bits=0xFFCA2940]
+  prev_noise_spectrum      min=26734.34        max=1.14749e+07     nan=1   inf=0   neg=0   first_bad=11 [bits=0xFFCA2940]
+  post_snr                 min=0               max=86.18711        nan=0   inf=0   neg=0   first_bad=-1
+  prior_snr                min=0.01333892      max=65.22367        nan=1   inf=0   neg=0   first_bad=11 [bits=0xFFCA2940]
+  tmp1                     min=1.026678        max=131.4473        nan=1   inf=0   neg=0   first_bad=11 [bits=0xFFCA2940]
+  tmp2                     min=0.0259821       max=0.9923916       nan=1   inf=0   neg=0   first_bad=11 [bits=0xFFCA2940]
+  bessel_tmp               min=0.0259821       max=85.55193        nan=1   inf=0   neg=0   first_bad=11 [bits=0xFFCA2940]
+  avg_log_lrt(before)      min=-0.5776361      max=107.465         nan=1   inf=0   neg=12  first_bad=11 [bits=0xFFCA2940]
+  avg_log_lrt(after)       min=-0.8313391      max=94.52455        nan=1   inf=0   neg=12  first_bad=11 [bits=0xFFCA2940]
+  inv_lrt(fastexp)         min=-9.063544e+37   max=2.272705        nan=0   inf=0   neg=2   first_bad=-1
+  speech_probability       min=1               max=1               nan=0   inf=0   neg=0   first_bad=-1
+  filter(post)             min=0.09            max=1               nan=0   inf=0   neg=0   first_bad=-1
+  conservative             min=24248.39        max=1.393622e+07    nan=0   inf=0   neg=0   first_bad=-1
+  ---- ENC\Test\data\input_long\merged_speech_10min.wav 汇总 ----
+    首次非有限值 signal_spectrum       : 无(全程有限)
+    首次非有限值 quantile(noise)       : 无(全程有限)
+    首次非有限值 noise_used            : 无(全程有限)
+    首次非有限值 post_snr              : 无(全程有限)
+    首次非有限值 prior_snr             : frame=177   bin=11   bits=0xFFCA2940 NaN
+    首次非有限值 tmp1                  : frame=177   bin=11   bits=0xFFCA2940 NaN
+    首次非有限值 tmp2                  : frame=177   bin=11   bits=0xFFCA2940 NaN
+    首次非有限值 bessel_tmp            : frame=177   bin=11   bits=0xFFCA2940 NaN
+    首次非有限值 avg_log_lrt           : frame=177   bin=11   bits=0xFFCA2940 NaN
+    首次非有限值 inv_lrt(fastexp)      : frame=176   bin=11   bits=0xFFCA2940 NaN
+    首次非有限值 speech_probability    : frame=176   bin=11   bits=0xFFCA2940 NaN
+    首次非有限值 filter(post)          : 无(全程有限)
+    首次非有限值 conservative          : 无(全程有限)
+    首次非有限值 avg_log_lrt(rerun)    : frame=177   bin=11   bits=0xFFCA2940 NaN
+    runner 口径首次报错帧 = 176 (NaN) ; 重算位级不一致总数 = 0
+    avg_log_lrt 首次 NaN 帧 = 177 ; fastexp 首次 NaN 帧 = 176 ; speech_probability 首次 NaN 帧 = 176
+    quantile 出现负值的首个帧 = -1 (无则 -1)
+    fastexp 负值区(avg_log_lrt>88.3604)首个帧 = 151 (该帧受影响 bin 数 = 2)
+    inv_lrt<0 首个帧 = 151 ; speech_probability 越界(<0或>1)首个帧 = 151
+    全部 129 个 prob 恒为 1.0 的首个帧 = 177
+    NaN 帧合计 = 1 / 200 帧 (0.500%) ; inv_lrt 出现 NaN 的帧 = 1 ; avg_log_lrt>88.3604 的帧 = 38
+    NaN 帧号列表(前 1 个) = [176]
+    相邻 NaN 帧间隔(最后一个不算) = []
+    NaN bin 直方图(仅列出出现过的 bin): bin11:1 
+    avg_log_lrt 全文件帧级最大值 = 392.034424 @frame 158 bin 4 ; 该 bin 的 inv_lrt = -0 [0x80000000]
